@@ -43,12 +43,12 @@ train_data <- as.data.frame(task_train$data())
 
 # 定义自定义默认值
 custom_defaults <- list(
-  "AST" = 20,  # AST默认值设为20
+  "AST" = 15.1,  # AST默认值设为20
   "PLT" = 239,  # PLT默认值设为239
   "gender" = 1,  # 性别默认设为女性 (1)
-  "number.of.metastatic.organs" = 1,  # 转移器官数量默认设为1
+  "number.of.metastatic.organs" = 2,  # 转移器官数量默认设为1
   "other.site.metastasis" = 0,  # 其他部位转移默认设为0
-  "primary.tumor.sites" = 1  # 原发肿瘤部位默认设为左结肠癌
+  "primary.tumor.sites" = 3  # 原发肿瘤部位默认设为左结肠癌
 )
 
 # 计算默认值的函数
