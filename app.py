@@ -297,25 +297,18 @@ with col_right:
 
     beeswarm_df = pd.DataFrame(beeswarm_data)
 
-    fig_beeswarm = go.Figure()
-
-    for feature in shap_labels:
-        feature_data = beeswarm_df[beeswarm_df['Feature'] == feature]
-        fig_beeswarm.add_trace(go.Scatter(
-            x=feature_data['SHAP Value'],
-            y=feature_data['Feature'],
-            mode='markers',
-            name=feature,
-            marker=dict(
-                color=feature_data['Feature Value'],
-                colorscale='RdBu',
-                cmin=-3,
-                cmax=3,
-                showscale=True,
-                size=6
-            ),
-            showlegend=False
-        ))
+    # 使用plotly express创建蜂群图
+    fig_beeswarm = px.scatter(
+        beeswarm_df,
+        x='SHAP Value',
+        y='Feature',
+        color='Feature Value',
+        color_continuous_scale='RdBu',
+        range_color=[-3, 3],
+        color_continuous_midpoint=0,
+        size_max=8,
+        opacity=0.8
+    )
 
     fig_beeswarm.update_layout(
         title="Global SHAP Beeswarm Plot",
@@ -325,17 +318,14 @@ with col_right:
         margin=dict(l=150, r=60, t=40, b=40),
         font=dict(size=12, color='black'),
         title_font=dict(size=16, color='#2c77b4'),
-        plot_bgcolor='#f5f5f5'
-    )
-
-    fig_beeswarm.update_traces(
-        marker=dict(
-            colorbar=dict(
-                title=dict(text='Feature Value', font=dict(size=12, face='bold')),
-                tickfont=dict(size=11)
-            )
+        plot_bgcolor='#f5f5f5',
+        coloraxis_colorbar=dict(
+            title=dict(text='Feature Value', font=dict(size=12, face='bold')),
+            tickfont=dict(size=11)
         )
     )
+
+    fig_beeswarm.update_traces(marker=dict(size=6))
 
     st.plotly_chart(fig_beeswarm, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
