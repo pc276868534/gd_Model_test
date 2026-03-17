@@ -377,7 +377,7 @@ with col_right:
         st.markdown('<div class="section-title">Individual SHAP Analysis</div>', unsafe_allow_html=True)
 
         # Waterfall图 - 完全模仿shapviz样式
-        st.markdown('<div style="padding-left: 150px;">', unsafe_allow_html=True)
+        st.markdown('<div style="padding-left: 200px;">', unsafe_allow_html=True)
 
         waterfall_data = [
             {'Feature': 'Number of metastatic organs = 1', 'Value': 0.0754},
@@ -392,60 +392,68 @@ with col_right:
 
         # 添加基准线（E[f(x)]）
         fig_waterfall.add_trace(go.Scatter(
-            x=[0.276, 0.276],
-            y=[waterfall_data[-1]['Feature'], ''],
-            mode='lines',
-            line=dict(color='gray', width=1, dash='dash'),
-            showlegend=False,
-            hoverinfo='none'
+            x=[0.276],
+            y=['E[f(x)]'],
+            mode='markers+text',
+            marker=dict(symbol='line-ns-open', size=10, color='black'),
+            text=['E[f(x)]=0.276'],
+            textposition='middle right',
+            textfont=dict(size=10, color='black'),
+            showlegend=False
         ))
 
-        # 添加条形
-        for item in waterfall_data:
+        # 添加E[f(x)]竖线
+        fig_waterfall.add_vline(x=0.276, line_dash='dash', line_color='gray', line_width=1, opacity=0.5)
+
+        # 添加条形 - 从E[f(x)]开始累积
+        cumulative = 0.276
+        for item in reversed(waterfall_data):
             color = '#FFC107' if item['Value'] > 0 else '#9C27B0'
+            base = cumulative
+            cumulative += item['Value']
+            
             fig_waterfall.add_trace(go.Bar(
                 y=[item['Feature']],
                 x=[item['Value']],
                 orientation='h',
                 marker_color=color,
-                text=[f"{item['Value']:.4f}"],
+                text=[f"{item['Value']:+.4f}"],
                 textposition='outside',
                 textfont=dict(size=9, color='black'),
                 showlegend=False,
-                hoverinfo='x+y'
+                hoverinfo='x+y',
+                offsetgroup=item['Feature'],
+                base=[0] if item['Value'] > 0 else [item['Value']]
             ))
-
-        # 添加E[f(x)]标签
-        fig_waterfall.add_trace(go.Scatter(
-            x=[0.276],
-            y=[''],
-            mode='text',
-            text=['E[f(x)]=0.276'],
-            textposition='bottom center',
-            textfont=dict(size=9, color='gray'),
-            showlegend=False
-        ))
 
         fig_waterfall.update_layout(
             title="SHAP Waterfall Plot",
-            xaxis_title="SHAP Value",
+            xaxis_title="Prediction",
             yaxis_title="",
-            height=310,
-            margin=dict(l=200, r=80, t=40, b=40),
-            font=dict(size=10, color='black'),
+            height=350,
+            margin=dict(l=10, r=80, t=40, b=40),
+            font=dict(size=11, color='black'),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
-            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
-            yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5, autorange='reversed'),
+            xaxis=dict(linecolor='black', linewidth=1, showgrid=False, range=[-0.1, 0.5]),
+            yaxis=dict(showgrid=False, linecolor='black', linewidth=1, autorange='reversed'),
             hovermode='closest'
         )
 
         st.plotly_chart(fig_waterfall, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Force Plot - 完全模仿shapviz样式
-        st.markdown('<div style="padding-left: 150px;">', unsafe_allow_html=True)
+        # Force Plot - 横向瀑布图，与R版本shapviz一致
+        st.markdown('<div style="padding-left: 200px;">', unsafe_allow_html=True)
+
+        # 创建子图用于显示feature labels
+        fig_force = make_subplots(
+            rows=1, cols=2,
+            column_widths=[0.75, 0.25],
+            horizontal_spacing=0.02,
+            specs=[[{'type': 'bar'}, {'type': 'bar'}]]
+        )
 
         force_data = [
             {'Feature': 'Primary tumor site = 1', 'Value': 0.0227},
@@ -456,60 +464,95 @@ with col_right:
             {'Feature': 'Other site metastasis = 0', 'Value': -0.00768}
         ]
 
-        fig_force = go.Figure()
+        # 计算累积位置
+        cumulative = 0.276
+        
+        # 添加E[f(x)]线
+        fig_force.add_vline(x=0.276, line_dash='dash', line_color='gray', line_width=1)
 
-        # 添加E[f(x)]基准线
-        fig_force.add_trace(go.Scatter(
-            x=[0.276, 0.276],
-            y=[-1, 1],
-            mode='lines',
-            line=dict(color='gray', width=1, dash='dash'),
-            showlegend=False,
-            hoverinfo='none'
-        ))
-
-        # 添加E[f(x)]标签
-        fig_force.add_trace(go.Scatter(
-            x=[0.276],
-            y=[1.2],
-            mode='text',
-            text=['E[f(x)]=0.276'],
-            textposition='middle center',
-            textfont=dict(size=9, color='gray'),
-            showlegend=False
-        ))
-
-        # 添加条形
-        for idx, item in enumerate(force_data):
+        # 添加条形 - 按顺序从左到右累积
+        for item in force_data:
             color = '#FFC107' if item['Value'] > 0 else '#9C27B0'
-            y_pos = idx * 0.8  # 垂直分布
-            fig_force.add_trace(go.Bar(
-                y=[y_pos],
-                x=[item['Value']],
-                orientation='h',
-                marker_color=color,
-                text=[f"{item['Value']:.4f}"],
-                textposition='inside',
-                textfont=dict(size=9, color='black'),
-                showlegend=False,
-                hoverinfo='text',
-                hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
-                base=0.276 if item['Value'] < 0 else 0
-            ))
+            
+            if item['Value'] > 0:
+                fig_force.add_trace(
+                    go.Bar(
+                        y=[0.5],
+                        x=[item['Value']],
+                        orientation='h',
+                        marker_color=color,
+                        text=[f"{item['Value']:.4f}"],
+                        textposition='inside',
+                        textfont=dict(size=9, color='black'),
+                        showlegend=False,
+                        hoverinfo='text',
+                        hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
+                        base=[cumulative]
+                    ),
+                    row=1, col=1
+                )
+                cumulative += item['Value']
+            else:
+                # 负值也添加到累积位置
+                fig_force.add_trace(
+                    go.Bar(
+                        y=[0.5],
+                        x=[abs(item['Value'])],
+                        orientation='h',
+                        marker_color=color,
+                        text=[f"{item['Value']:.4f}"],
+                        textposition='inside',
+                        textfont=dict(size=9, color='black'),
+                        showlegend=False,
+                        hoverinfo='text',
+                        hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
+                        base=[cumulative]
+                    ),
+                    row=1, col=1
+                )
+                cumulative += item['Value']
+
+        # 最终预测值标签
+        final_prediction = 0.276 + sum([item['Value'] for item in force_data])
+        fig_force.add_annotation(
+            x=final_prediction,
+            y=0.5,
+            text=f"{final_prediction:.4f}",
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=2,
+            arrowcolor='black',
+            ax=-20,
+            ay=0,
+            font=dict(size=11, color='black', weight='bold')
+        )
+
+        # E[f(x)]标签
+        fig_force.add_annotation(
+            x=0.276,
+            y=0.9,
+            text='E[f(x)]=0.276',
+            showarrow=False,
+            font=dict(size=9, color='gray'),
+            xanchor='center'
+        )
 
         fig_force.update_layout(
             title="Individual SHAP Force Plot",
             xaxis_title="Prediction Value",
             yaxis_title="",
-            height=220,
-            margin=dict(l=0, r=20, t=40, b=40),
+            height=200,
+            margin=dict(l=10, r=10, t=40, b=40),
             font=dict(size=10, color='black'),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
-            barmode='overlay',
-            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
-            yaxis=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=0.5),
+            barmode='stack',
+            xaxis=dict(linecolor='black', linewidth=1, showgrid=False, range=[0.1, 0.5]),
+            yaxis=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=1, range=[0, 1]),
+            xaxis2=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=1),
+            yaxis2=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=1, range=[0, 1]),
             hovermode='closest'
         )
 
@@ -524,6 +567,10 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 页脚
 st.markdown("""
 <footer>
-    web address: https://chgdpnk1.shinyapps.io/gdzjnkzxyy_Model/
+    <div class="footer-content">
+
+        <p>Copyright &copy; 2026. All rights reserved.</p>
+
+    </div>
 </footer>
 """, unsafe_allow_html=True)
