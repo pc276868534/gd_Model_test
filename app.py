@@ -278,8 +278,10 @@ with col_right:
         yaxis_title="Feature",
         height=300,
         margin=dict(l=150, r=20, t=40, b=40),
-        font=dict(size=12, color='black'),
-        title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
+        font=dict(size=12, color='black', family='Segoe UI, Arial, sans-serif'),
+        title=dict(
+            font=dict(size=16, color='#2c77b4')
+        ),
         showlegend=False,
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -290,14 +292,14 @@ with col_right:
             gridcolor='#e0e0e0',
             gridwidth=0.5,
             tickfont=dict(size=12, color='black'),
-            titlefont=dict(size=14, weight='bold', color='black')
+            title_font=dict(size=14, weight='bold', color='black')
         ),
         yaxis=dict(
             showgrid=False,
             linecolor='black',
             linewidth=0.5,
             tickfont=dict(size=12, color='black'),
-            titlefont=dict(size=14, weight='bold', color='black')
+            title_font=dict(size=14, weight='bold', color='black')
         )
     )
     
@@ -337,8 +339,10 @@ with col_right:
         yaxis_title="Feature",
         height=400,
         margin=dict(l=150, r=60, t=40, b=40),
-        font=dict(size=12, color='black'),
-        title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
+        font=dict(size=12, color='black', family='Segoe UI, Arial, sans-serif'),
+        title=dict(
+            font=dict(size=16, color='#2c77b4')
+        ),
         plot_bgcolor='#f5f5f5',
         paper_bgcolor='#f5f5f5',
         xaxis=dict(
@@ -348,14 +352,14 @@ with col_right:
             gridcolor='#d0d0d0',
             gridwidth=0.5,
             tickfont=dict(size=12, color='black'),
-            titlefont=dict(size=14, weight='bold', color='black')
+            title_font=dict(size=14, weight='bold', color='black')
         ),
         yaxis=dict(
             showgrid=False,
             linecolor='black',
             linewidth=0.5,
             tickfont=dict(size=12, color='black'),
-            titlefont=dict(size=14, weight='bold', color='black')
+            title_font=dict(size=14, weight='bold', color='black')
         ),
         legend=dict(
             orientation="v",
@@ -502,8 +506,10 @@ with col_right:
             yaxis_title="",
             height=310,
             margin=dict(l=180, r=50, t=40, b=40),
-            font=dict(size=10, family="'Segoe UI', Arial, sans-serif", color='black'),
-            title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
+            font=dict(size=10, color='black', family='Segoe UI, Arial, sans-serif'),
+            title=dict(
+                font=dict(size=16, color='#2c77b4')
+            ),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
@@ -513,7 +519,7 @@ with col_right:
                 showgrid=False,
                 zeroline=False,
                 tickfont=dict(size=12, color='black'),
-                titlefont=dict(size=14, weight='bold', color='black')
+                title_font=dict(size=14, weight='bold', color='black')
             ),
             yaxis=dict(
                 showgrid=False,
@@ -522,7 +528,7 @@ with col_right:
                 autorange='reversed',
                 zeroline=False,
                 tickfont=dict(size=10, color='black'),
-                titlefont=dict(size=10, color='black')
+                title_font=dict(size=10, color='black')
             ),
             hovermode='closest'
         )
@@ -600,8 +606,10 @@ with col_right:
             yaxis_title="",
             height=220,
             margin=dict(l=20, r=30, t=40, b=40),
-            font=dict(size=10, family="'Segoe UI', Arial, sans-serif", color='black'),
-            title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
+            font=dict(size=10, color='black', family='Segoe UI, Arial, sans-serif'),
+            title=dict(
+                font=dict(size=16, color='#2c77b4')
+            ),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
@@ -613,7 +621,7 @@ with col_right:
                 zeroline=False,
                 range=[0.2, 0.4],
                 tickfont=dict(size=12, color='black'),
-                titlefont=dict(size=14, weight='bold', color='black')
+                title_font=dict(size=14, weight='bold', color='black')
             ),
             yaxis=dict(
                 showgrid=False,
@@ -622,7 +630,7 @@ with col_right:
                 linewidth=0.5,
                 zeroline=False,
                 range=[-0.5, 0.5],
-                titlefont=dict(size=10, color='black')
+                title_font=dict(size=10, color='black')
             ),
             hovermode='closest'
         )
