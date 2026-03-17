@@ -3,16 +3,13 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
-import joblib
-import os
 
 # 页面配置
 st.set_page_config(
     page_title="PM Risk Prediction Model",
     page_icon="🏥",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # 自定义CSS样式 - 完全按照app.R的样式
@@ -106,19 +103,6 @@ st.markdown("""
         font-size: 12px;
         margin-top: 10px;
     }
-    .form-group {
-        margin-bottom: 6px !important;
-    }
-    .form-group label {
-        margin-bottom: 3px !important;
-        font-size: 13px;
-        color: #333;
-    }
-    .form-control {
-        height: 36px !important;
-        padding: 5px 10px !important;
-        font-size: 13px;
-    }
     .shap-plot-container {
         margin-bottom: 20px;
         border: 1px solid #e0e0e0;
@@ -143,131 +127,118 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 特征定义 - 按照app.R的配置
-FEATURES = {
-    'AST': {'type': 'numeric', 'default': 20, 'label': 'AST (U/L)'},
-    'PLT': {'type': 'numeric', 'default': 239, 'label': 'PLT (×10⁹/L)'},
-    'gender': {'type': 'categorical', 'default': 'Female', 'label': 'Gender',
-               'choices': ['Male', 'Female']},
-    'number.of.metastatic.organs': {'type': 'numeric', 'default': 1, 'label': 'Number of metastatic organs (n)'},
-    'other.site.metastasis': {'type': 'numeric', 'default': 0, 'label': 'Other site metastasis (n)'},
-    'primary.tumor.sites': {'type': 'categorical', 'default': 'left colon cancer', 'label': 'Primary tumor site',
-                            'choices': ['left colon cancer', 'right colon cancer', 'rectal cancer']}
-}
+# 特征定义
+FEATURES = [
+    {'name': 'AST', 'type': 'numeric', 'default': 20, 'label': 'AST (U/L)'},
+    {'name': 'PLT', 'type': 'numeric', 'default': 239, 'label': 'PLT (×10⁹/L)'},
+    {'name': 'gender', 'type': 'categorical', 'default': 'Female', 'label': 'Gender',
+     'choices': ['Male', 'Female']},
+    {'name': 'number.of.metastatic.organs', 'type': 'numeric', 'default': 1,
+     'label': 'Number of metastatic organs (n)'},
+    {'name': 'other.site.metastasis', 'type': 'numeric', 'default': 0,
+     'label': 'Other site metastasis (n)'},
+    {'name': 'primary.tumor.sites', 'type': 'categorical', 'default': 'left colon cancer',
+     'label': 'Primary tumor site',
+     'choices': ['left colon cancer', 'right colon cancer', 'rectal cancer']}
+]
 
-# 模拟模型预测函数（需要替换为实际模型）
+# 模拟预测函数
 def predict_risk(input_data):
-    """
-    风险预测函数
-    注意：这里使用模拟数据，你需要根据实际情况加载你的模型
-    """
-    # 这里是模拟预测逻辑，你需要替换为实际的模型预测
-    # 例如: model.predict(input_data)
-
-    # 模拟计算（基于特征的简单加权）
     ast_score = (input_data['AST'] - 50) / 100
     plt_score = (input_data['PLT'] - 250) / 500
     gender_score = 0.1 if input_data['gender'] == 'Male' else 0
     organ_score = input_data['number.of.metastatic.organs'] * 0.15
-    site_score = {'left colon cancer': 0.05, 'right colon cancer': 0.1, 'rectal cancer': 0.08}[input_data['primary.tumor.sites']]
+    site_score = {'left colon cancer': 0.05, 'right colon cancer': 0.1, 'rectal cancer': 0.08}[
+        input_data['primary.tumor.sites']
+    ]
     other_score = input_data['other.site.metastasis'] * 0.1
-
+    
     prob = 0.3 + ast_score + plt_score + gender_score + organ_score + site_score + other_score
-    prob = max(0, min(1, prob))  # 限制在0-1之间
-
+    prob = max(0, min(1, prob))
+    
     return round(prob, 3)
 
-# 主容器 - 添加页边距，按照app.R的布局
+# 主容器
 st.markdown('<div style="margin: 10px;">', unsafe_allow_html=True)
 
-# 创建布局 - 左侧4列（输入），右侧8列（结果）
+# 布局 - 左4右8
 col_left, col_right = st.columns([4, 8])
 
 # 左侧 - 输入特征
 with col_left:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Input Features</div>', unsafe_allow_html=True)
-
-    # 按照app.R的两列布局创建输入控件
+    
     input_data = {}
-    feature_items = list(FEATURES.items())
-
-    # 逐对处理特征
-    for i in range(0, len(feature_items), 2):
-        col_input1, col_input2 = st.columns(2)
-
-        # 创建第一个输入控件
-        feature_name, feature_info = feature_items[i]
-        with col_input1:
-            if feature_info['type'] == 'numeric':
-                input_data[feature_name] = st.number_input(
-                    feature_info['label'],
-                    value=float(feature_info['default']),
+    
+    # 两列布局
+    for i in range(0, len(FEATURES), 2):
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            f = FEATURES[i]
+            if f['type'] == 'numeric':
+                input_data[f['name']] = st.number_input(
+                    f['label'],
+                    value=float(f['default']),
                     step=1.0,
                     format="%.1f",
-                    key=f"input_{feature_name}"
+                    key=f"input_{f['name']}"
                 )
-            elif feature_info['type'] == 'categorical':
-                input_data[feature_name] = st.selectbox(
-                    feature_info['label'],
-                    feature_info['choices'],
-                    index=feature_info['choices'].index(feature_info['default']),
-                    key=f"input_{feature_name}"
+            else:
+                input_data[f['name']] = st.selectbox(
+                    f['label'],
+                    f['choices'],
+                    index=f['choices'].index(f['default']),
+                    key=f"input_{f['name']}"
                 )
-
-        # 创建第二个输入控件（如果还有剩余特征）
-        if i + 1 < len(feature_items):
-            next_feature_name, next_feature_info = feature_items[i + 1]
-            with col_input2:
-                if next_feature_info['type'] == 'numeric':
-                    input_data[next_feature_name] = st.number_input(
-                        next_feature_info['label'],
-                        value=float(next_feature_info['default']),
+        
+        if i + 1 < len(FEATURES):
+            with c2:
+                f = FEATURES[i + 1]
+                if f['type'] == 'numeric':
+                    input_data[f['name']] = st.number_input(
+                        f['label'],
+                        value=float(f['default']),
                         step=1.0,
                         format="%.1f",
-                        key=f"input_{next_feature_name}"
+                        key=f"input_{f['name']}"
                     )
-                elif next_feature_info['type'] == 'categorical':
-                    input_data[next_feature_name] = st.selectbox(
-                        next_feature_info['label'],
-                        next_feature_info['choices'],
-                        index=next_feature_info['choices'].index(next_feature_info['default']),
-                        key=f"input_{next_feature_name}"
+                else:
+                    input_data[f['name']] = st.selectbox(
+                        f['label'],
+                        f['choices'],
+                        index=f['choices'].index(f['default']),
+                        key=f"input_{f['name']}"
                     )
-
-    # 预测按钮 - 按照app.R的样式
+    
     st.markdown('<div style="margin-top: 5px;">', unsafe_allow_html=True)
-    predict_button = st.button(
-        "Predict Now",
-        type="primary",
-        use_container_width=True
-    )
+    predict_button = st.button("Predict Now", type="primary", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 右侧 - 全局SHAP分析、预测结果、个体SHAP分析
+# 右侧 - 结果
 with col_right:
-    # 全局SHAP分析卡片
+    # 全局SHAP分析
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Global SHAP Analysis</div>', unsafe_allow_html=True)
-
-    # 全局SHAP条形图（重要性图）
+    
+    # 条形图
     st.markdown('<div class="shap-plot-container">', unsafe_allow_html=True)
     st.markdown('<div class="shap-title">Global SHAP Importance Plot</div>', unsafe_allow_html=True)
-
-    shap_features = list(FEATURES.keys())
-    shap_values = [0.15, 0.12, 0.10, 0.08, 0.06, 0.04]  # 模拟数据
-    shap_labels = [FEATURES[f]['label'] for f in shap_features]
-
-    fig_shap_bar = go.Figure(go.Bar(
+    
+    shap_labels = [f['label'] for f in FEATURES]
+    shap_values = [0.15, 0.12, 0.10, 0.08, 0.06, 0.04]
+    
+    fig_bar = go.Figure(go.Bar(
         x=shap_values,
         y=shap_labels,
         orientation='h',
         marker_color='#FFA726'
     ))
-
-    fig_shap_bar.update_layout(
+    
+    fig_bar.update_layout(
         title="Global SHAP Feature Importance",
         xaxis_title="mean(|SHAP value|)",
         yaxis_title="Feature",
@@ -275,30 +246,31 @@ with col_right:
         margin=dict(l=150, r=20, t=40, b=40),
         font=dict(size=12, color='black'),
         title_font=dict(size=16, color='#2c77b4'),
-        showlegend=False
+        showlegend=False,
+        plot_bgcolor='white',
+        xaxis=dict(gridcolor='#e0e0e0', linewidth=0.5),
+        yaxis=dict(showgrid=False)
     )
-
-    st.plotly_chart(fig_shap_bar, use_container_width=True)
+    
+    st.plotly_chart(fig_bar, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
-    # 全局SHAP蜂群图
+    
+    # 蜂群图
     st.markdown('<div class="shap-plot-container">', unsafe_allow_html=True)
     st.markdown('<div class="shap-title">Global SHAP Beeswarm Plot</div>', unsafe_allow_html=True)
-
-    # 模拟蜂群图数据
+    
     beeswarm_data = []
-    for feature_idx, feature_name in enumerate(shap_features):
-        for _ in range(50):  # 每个特征50个点
+    for idx, f in enumerate(FEATURES):
+        for _ in range(50):
             beeswarm_data.append({
-                'Feature': FEATURES[feature_name]['label'],
-                'SHAP Value': np.random.normal(shap_values[feature_idx], 0.02),
+                'Feature': f['label'],
+                'SHAP Value': np.random.normal(shap_values[idx], 0.02),
                 'Feature Value': np.random.uniform(-3, 3)
             })
-
+    
     beeswarm_df = pd.DataFrame(beeswarm_data)
-
-    # 使用plotly express创建蜂群图
-    fig_beeswarm = px.scatter(
+    
+    fig_swarm = px.scatter(
         beeswarm_df,
         x='SHAP Value',
         y='Feature',
@@ -309,8 +281,8 @@ with col_right:
         size_max=8,
         opacity=0.8
     )
-
-    fig_beeswarm.update_layout(
+    
+    fig_swarm.update_layout(
         title="Global SHAP Beeswarm Plot",
         xaxis_title="SHAP Value",
         yaxis_title="Feature",
@@ -319,46 +291,41 @@ with col_right:
         font=dict(size=12, color='black'),
         title_font=dict(size=16, color='#2c77b4'),
         plot_bgcolor='#f5f5f5',
-        coloraxis_colorbar=dict(
-            title=dict(text='Feature Value', font=dict(size=12, face='bold')),
-            tickfont=dict(size=11)
-        )
+        xaxis=dict(gridcolor='#d0d0d0', linewidth=0.5),
+        yaxis=dict(showgrid=False)
     )
-
-    fig_beeswarm.update_traces(marker=dict(size=6))
-
-    st.plotly_chart(fig_beeswarm, use_container_width=True)
+    fig_swarm.update_traces(marker=dict(size=6))
+    
+    st.plotly_chart(fig_swarm, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
+    
     st.markdown('</div>', unsafe_allow_html=True)
-
-    # 预测结果卡片
-    if predict_button or 'last_prediction' in st.session_state:
-        # 执行预测
+    
+    # 预测结果
+    if predict_button or 'last_prob' in st.session_state:
         prob = predict_risk(input_data)
-        st.session_state.last_prediction = prob
-
+        st.session_state.last_prob = prob
+        
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown('<div class="section-title">Prediction Result</div>', unsafe_allow_html=True)
-
-        # 概率文本 - 按照app.R的样式
+        
         st.markdown(f"""
         <div class="prob-text-style">
             The probability that this patient has the disease is {prob}
         </div>
         """, unsafe_allow_html=True)
-
-        # 风险指示器 - 按照app.R的计算方式
+        
+        # 计算位置
         if prob <= 0.3:
             pos = (prob / 0.3) * 30
         elif prob <= 0.5:
             pos = 30 + ((prob - 0.3) / (0.5 - 0.3)) * 20
         else:
             pos = 50 + ((prob - 0.5) / (1 - 0.5)) * 50
-
+        
         pos = max(0, min(100, pos))
-
-        # 风险等级标签 - 按照app.R的计算方式
+        
+        # 风险等级
         if prob > 0.5:
             risk_color = "#d9534f"
             risk_label = "High Risk"
@@ -368,8 +335,7 @@ with col_right:
         else:
             risk_color = "#5cb85c"
             risk_label = "Low Risk"
-
-        # 风险指示器和刻度 - 按照app.R的布局
+        
         st.markdown(f"""
         <div class="risk-container">
             <div class="risk-indicator" style="left: {pos}%;"></div>
@@ -380,31 +346,27 @@ with col_right:
             <span class="scale-label" style="left: 50%;">0.5</span>
             <span class="scale-label" style="right: 0%; transform: none;">High Risk 1</span>
         </div>
-        """, unsafe_allow_html=True)
-
-        # 风险标签徽章
-        st.markdown(f"""
         <div class="risk-label-badge" style="background-color: {risk_color};">
             {risk_label}
         </div>
         """, unsafe_allow_html=True)
-
+        
         st.markdown('</div>', unsafe_allow_html=True)
-
-        # 个体SHAP分析卡片
+        
+        # 个体SHAP分析
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown('<div class="section-title">Individual SHAP Analysis</div>', unsafe_allow_html=True)
-
-        # Waterfall图 - 高度310px
-        shap_individual_values = [-0.05, 0.03, 0.02, 0.08, -0.02, 0.01]
-
+        
+        # Waterfall图
+        waterfall_values = [-0.05, 0.03, 0.02, 0.08, -0.02, 0.01]
+        
         fig_waterfall = go.Figure(go.Bar(
-            x=shap_individual_values,
+            x=waterfall_values,
             y=shap_labels,
             orientation='h',
-            marker_color=['#b2182b' if x > 0 else '#2166ac' for x in shap_individual_values]
+            marker_color=['#b2182b' if x > 0 else '#2166ac' for x in waterfall_values]
         ))
-
+        
         fig_waterfall.update_layout(
             title="SHAP Waterfall Plot",
             xaxis_title="SHAP Value",
@@ -417,20 +379,19 @@ with col_right:
             xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
             yaxis=dict(showgrid=False)
         )
-
+        
         st.plotly_chart(fig_waterfall, use_container_width=True)
-
-        # Force Plot - 高度220px，左边距150px
+        
+        # Force Plot
         st.markdown('<div style="padding-left: 150px;">', unsafe_allow_html=True)
-
-        fig_force = go.Figure()
-        fig_force.add_trace(go.Bar(
+        
+        fig_force = go.Figure(go.Bar(
             x=[prob],
             y=[''],
             orientation='h',
             marker_color='#2c77b4'
         ))
-
+        
         fig_force.update_layout(
             title="Individual SHAP Force Plot",
             xaxis_title="Prediction Value",
@@ -443,19 +404,18 @@ with col_right:
             xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
             yaxis=dict(showgrid=False, showticklabels=False)
         )
-
+        
         st.plotly_chart(fig_force, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
-
+        
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 结束主容器
+# 结束容器
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 页脚 - 按照app.R的样式
+# 页脚
 st.markdown("""
 <footer>
     web address: https://chgdpnk1.shinyapps.io/gdzjnkzxyy_Model/
 </footer>
 """, unsafe_allow_html=True)
-
