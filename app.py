@@ -279,9 +279,6 @@ with col_right:
         height=300,
         margin=dict(l=150, r=20, t=40, b=40),
         font=dict(size=12, color='black', family='Segoe UI, Arial, sans-serif'),
-        title=dict(
-            font=dict(size=16, color='#2c77b4')
-        ),
         showlegend=False,
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -301,6 +298,11 @@ with col_right:
             tickfont=dict(size=12, color='black'),
             title_font=dict(size=14, weight='bold', color='black')
         )
+    )
+    
+    # 设置标题样式
+    fig_bar.update_layout(
+        title_font=dict(size=16, color='#2c77b4')
     )
     
     st.plotly_chart(fig_bar, use_container_width=True)
@@ -340,9 +342,6 @@ with col_right:
         height=400,
         margin=dict(l=150, r=60, t=40, b=40),
         font=dict(size=12, color='black', family='Segoe UI, Arial, sans-serif'),
-        title=dict(
-            font=dict(size=16, color='#2c77b4')
-        ),
         plot_bgcolor='#f5f5f5',
         paper_bgcolor='#f5f5f5',
         xaxis=dict(
@@ -373,6 +372,11 @@ with col_right:
             ),
             font=dict(size=11)
         )
+    )
+    
+    # 设置标题样式
+    fig_swarm.update_layout(
+        title_font=dict(size=16, color='#2c77b4')
     )
     fig_swarm.update_traces(marker=dict(size=6))
     
@@ -507,9 +511,6 @@ with col_right:
             height=310,
             margin=dict(l=180, r=50, t=40, b=40),
             font=dict(size=10, color='black', family='Segoe UI, Arial, sans-serif'),
-            title=dict(
-                font=dict(size=16, color='#2c77b4')
-            ),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
@@ -531,6 +532,11 @@ with col_right:
                 title_font=dict(size=10, color='black')
             ),
             hovermode='closest'
+        )
+        
+        # 设置标题样式
+        fig_waterfall.update_layout(
+            title_font=dict(size=16, color='#2c77b4')
         )
 
         st.plotly_chart(fig_waterfall, use_container_width=True)
@@ -607,9 +613,6 @@ with col_right:
             height=220,
             margin=dict(l=20, r=30, t=40, b=40),
             font=dict(size=10, color='black', family='Segoe UI, Arial, sans-serif'),
-            title=dict(
-                font=dict(size=16, color='#2c77b4')
-            ),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
@@ -633,6 +636,11 @@ with col_right:
                 title_font=dict(size=10, color='black')
             ),
             hovermode='closest'
+        )
+        
+        # 设置标题样式
+        fig_force.update_layout(
+            title_font=dict(size=16, color='#2c77b4')
         )
 
         st.plotly_chart(fig_force, use_container_width=True)
