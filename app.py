@@ -13,70 +13,55 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 自定义CSS样式
+# 自定义CSS样式 - 完全按照app.R
 st.markdown("""
 <style>
-    .stApp {
+    body { 
         background-color: #E6F7FF;
+        font-family: 'Segoe UI', Arial, sans-serif; 
+        margin: 0;
+        padding: 0;
     }
     
-    .stButton>button {
-        width: 100%;
-        height: 40px;
-        font-size: 16px;
-        border-radius: 8px;
-        background-color: #2c77b4;
-        color: white;
-        border: none;
-        font-weight: 600;
+    .navbar-custom { 
+        background-color: #2c77b4; 
+        color: white; 
+        padding: 12px 20px; 
+        border-radius: 0 0 10px 10px; 
+        margin-bottom: 20px; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
     }
     
-    .stButton>button:hover {
-        background-color: #235e92;
-    }
-    
-    .stNumberInput>label, .stSelectbox>label {
-        font-size: 13px;
-        color: #333;
-        margin-bottom: 3px;
-        font-weight: normal;
-    }
-    
-    .navbar-custom {
-        background-color: #2c77b4;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 0 0 10px 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .card {
-        background: white;
+    .card { 
+        background: white; 
         padding: 15px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgb(44 119 180);
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px rgb(44 119 180); 
         margin-bottom: 15px;
-        text-align: left;
+        text-align: left; 
     }
-    .section-title {
-        color: #2c77b4;
-        font-weight: bold;
-        border-left: 4px solid #2c77b4;
-        padding-left: 10px;
+    
+    .section-title { 
+        color: #2c77b4; 
+        font-weight: bold; 
+        border-left: 4px solid #2c77b4; 
+        padding-left: 10px; 
         margin-bottom: 12px;
         font-size: 16px;
     }
-    .risk-container {
-        position: relative;
+    
+    .risk-container { 
+        position: relative; 
         width: 95%;
         height: 16px;
-        background: linear-gradient(to right,
-            #5cb85c 0%, #5cb85c 30%,
-            #f0ad4e 30%, #f0ad4e 50%,
-            #d9534f 50%, #d9534f 100%);
-        border-radius: 8px;
+        background: linear-gradient(to right, 
+            #5cb85c 0%, #5cb85c 30%, 
+            #f0ad4e 30%, #f0ad4e 50%, 
+            #d9534f 50%, #d9534f 100%); 
+        border-radius: 8px; 
         margin: 12px auto 5px auto;
     }
+    
     .risk-indicator {
         position: absolute;
         top: -4px;
@@ -87,43 +72,66 @@ st.markdown("""
         transform: translateX(-50%);
         transition: left 0.5s ease-out;
     }
-    .scale-wrapper {
-        position: relative;
+
+    .scale-wrapper { 
+        position: relative; 
         width: 95%;
         height: 18px;
-        color: #666;
+        color: #666; 
         font-size: 12px;
-        font-weight: 500;
+        font-weight: 500; 
         margin-bottom: 12px;
         margin-left: auto;
         margin-right: auto;
     }
-    .scale-label {
-        position: absolute;
-        transform: translateX(-50%);
+    
+    .scale-label { 
+        position: absolute; 
+        transform: translateX(-50%); 
     }
-    .risk-label-badge {
-        display: inline-block;
+    
+    .risk-label-badge { 
+        display: inline-block; 
         padding: 4px 16px;
-        border-radius: 20px;
-        color: white;
-        font-weight: bold;
+        border-radius: 20px; 
+        color: white; 
+        font-weight: bold; 
         font-size: 14px;
         margin-top: 5px;
     }
-    .prob-text-style {
-        color: #2c77b4;
-        font-weight: 600;
+    
+    .prob-text-style { 
+        color: #2c77b4; 
+        font-weight: 600; 
         font-size: 20px;
         margin-bottom: 8px;
     }
-    footer {
-        text-align: left;
-        color: #333;
+    
+    footer { 
+        text-align: left; 
+        color: #333; 
         padding: 15px 0;
         font-size: 12px;
         margin-top: 10px;
     }
+    
+    .form-group { 
+        margin-bottom: 6px !important;
+    }
+    
+    .form-group label { 
+        margin-bottom: 3px !important;
+        font-size: 13px;
+        color: #333;
+    }
+    
+    .form-control { 
+        height: 36px !important;
+        padding: 5px 10px !important;
+        font-size: 13px;
+    }
+    
+    /* SHAP图表样式 */
     .shap-plot-container {
         margin-bottom: 20px;
         border: 1px solid #e0e0e0;
@@ -131,6 +139,7 @@ st.markdown("""
         padding: 10px;
         background-color: #f9f9f9;
     }
+    
     .shap-title {
         text-align: center;
         font-weight: bold;
@@ -143,7 +152,7 @@ st.markdown("""
 
 # 标题
 st.markdown("""
-<div class="navbar-custom" style="margin: 10px;">
+<div class="navbar-custom">
     <h2 style="margin:0; font-size: 20px;">PM Risk Prediction Model for Colorectal Cancer Patients</h2>
 </div>
 """, unsafe_allow_html=True)
@@ -195,6 +204,7 @@ with col_left:
         c1, c2 = st.columns(2)
         
         with c1:
+            st.markdown('<div class="form-group">', unsafe_allow_html=True)
             f = FEATURES[i]
             if f['type'] == 'numeric':
                 input_data[f['name']] = st.number_input(
@@ -211,9 +221,11 @@ with col_left:
                     index=f['choices'].index(f['default']),
                     key=f"input_{f['name']}"
                 )
+            st.markdown('</div>', unsafe_allow_html=True)
         
         if i + 1 < len(FEATURES):
             with c2:
+                st.markdown('<div class="form-group">', unsafe_allow_html=True)
                 f = FEATURES[i + 1]
                 if f['type'] == 'numeric':
                     input_data[f['name']] = st.number_input(
@@ -230,6 +242,7 @@ with col_left:
                         index=f['choices'].index(f['default']),
                         key=f"input_{f['name']}"
                     )
+                st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('<div style="margin-top: 5px;">', unsafe_allow_html=True)
     predict_button = st.button("Predict Now", type="primary", use_container_width=True)
@@ -239,6 +252,8 @@ with col_left:
 
 # 右侧 - 结果
 with col_right:
+    # 添加外边距容器
+    st.markdown('<div style="margin: 10px;">', unsafe_allow_html=True)
     # 全局SHAP分析
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">Global SHAP Analysis</div>', unsafe_allow_html=True)
@@ -264,12 +279,26 @@ with col_right:
         height=300,
         margin=dict(l=150, r=20, t=40, b=40),
         font=dict(size=12, color='black'),
-        title_font=dict(size=16, color='#2c77b4'),
+        title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
         showlegend=False,
         plot_bgcolor='white',
         paper_bgcolor='white',
-        xaxis=dict(linecolor='black', linewidth=0.5, showgrid=True, gridcolor='#e0e0e0', gridwidth=0.5),
-        yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
+        xaxis=dict(
+            linecolor='black',
+            linewidth=0.5,
+            showgrid=True,
+            gridcolor='#e0e0e0',
+            gridwidth=0.5,
+            tickfont=dict(size=12, color='black'),
+            titlefont=dict(size=14, weight='bold', color='black')
+        ),
+        yaxis=dict(
+            showgrid=False,
+            linecolor='black',
+            linewidth=0.5,
+            tickfont=dict(size=12, color='black'),
+            titlefont=dict(size=14, weight='bold', color='black')
+        )
     )
     
     st.plotly_chart(fig_bar, use_container_width=True)
@@ -309,11 +338,37 @@ with col_right:
         height=400,
         margin=dict(l=150, r=60, t=40, b=40),
         font=dict(size=12, color='black'),
-        title_font=dict(size=16, color='#2c77b4'),
+        title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
         plot_bgcolor='#f5f5f5',
         paper_bgcolor='#f5f5f5',
-        xaxis=dict(linecolor='black', linewidth=0.5, showgrid=True, gridcolor='#d0d0d0', gridwidth=0.5),
-        yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
+        xaxis=dict(
+            linecolor='black',
+            linewidth=0.5,
+            showgrid=True,
+            gridcolor='#d0d0d0',
+            gridwidth=0.5,
+            tickfont=dict(size=12, color='black'),
+            titlefont=dict(size=14, weight='bold', color='black')
+        ),
+        yaxis=dict(
+            showgrid=False,
+            linecolor='black',
+            linewidth=0.5,
+            tickfont=dict(size=12, color='black'),
+            titlefont=dict(size=14, weight='bold', color='black')
+        ),
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="right",
+            x=1.02,
+            title=dict(
+                text="Feature Value",
+                font=dict(size=12, weight='bold')
+            ),
+            font=dict(size=11)
+        )
     )
     fig_swarm.update_traces(marker=dict(size=6))
     
@@ -332,7 +387,7 @@ with col_right:
         
         st.markdown(f"""
         <div class="prob-text-style">
-            The probability that this patient has the disease is {prob}
+            The probability that this patient has disease is {prob}
         </div>
         """, unsafe_allow_html=True)
         
@@ -372,152 +427,163 @@ with col_right:
         
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # 个体SHAP分析
+        # 个体SHAP分析 - 完全按照R shapviz包的标准
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown('<div class="section-title">Individual SHAP Analysis</div>', unsafe_allow_html=True)
 
-        # Waterfall图 - 完全模仿shapviz样式
-        st.markdown('<div style="padding-left: 200px;">', unsafe_allow_html=True)
-
+        # Waterfall图 - 按照shapviz的sv_waterfall函数样式
         waterfall_data = [
-            {'Feature': 'Number of metastatic organs = 1', 'Value': 0.0754},
-            {'Feature': 'Gender = 1', 'Value': -0.0276},
-            {'Feature': 'PLT = 239', 'Value': 0.0247},
-            {'Feature': 'Primary tumor site = 1', 'Value': 0.0227},
-            {'Feature': 'AST = 20', 'Value': -0.02},
-            {'Feature': 'Other site metastasis = 0', 'Value': -0.00768}
+            {'Feature': 'Number of metastatic organs', 'Value': 0.0754},
+            {'Feature': 'Gender', 'Value': -0.0276},
+            {'Feature': 'PLT', 'Value': 0.0247},
+            {'Feature': 'Primary tumor site', 'Value': 0.0227},
+            {'Feature': 'AST', 'Value': -0.02},
+            {'Feature': 'Other site metastasis', 'Value': -0.00768}
         ]
 
         fig_waterfall = go.Figure()
 
-        # 添加基准线（E[f(x)]）
-        fig_waterfall.add_trace(go.Scatter(
-            x=[0.276],
-            y=['E[f(x)]'],
-            mode='markers+text',
-            marker=dict(symbol='line-ns-open', size=10, color='black'),
-            text=['E[f(x)]=0.276'],
-            textposition='middle right',
-            textfont=dict(size=10, color='black'),
-            showlegend=False
-        ))
+        # shapviz的waterfall从底部开始,正值向右,负值向左
+        # 从baseline开始累积
+        baseline = 0.276
+        current_x = baseline
 
-        # 添加E[f(x)]竖线
-        fig_waterfall.add_vline(x=0.276, line_dash='dash', line_color='gray', line_width=1, opacity=0.5)
-
-        # 添加条形 - 从E[f(x)]开始累积
-        cumulative = 0.276
-        for item in reversed(waterfall_data):
+        # 按照shapviz的顺序:从顶部特征到底部特征
+        for idx, item in enumerate(reversed(waterfall_data)):
             color = '#FFC107' if item['Value'] > 0 else '#9C27B0'
-            base = cumulative
-            cumulative += item['Value']
             
-            fig_waterfall.add_trace(go.Bar(
-                y=[item['Feature']],
-                x=[item['Value']],
-                orientation='h',
-                marker_color=color,
-                text=[f"{item['Value']:+.4f}"],
-                textposition='outside',
-                textfont=dict(size=9, color='black'),
-                showlegend=False,
-                hoverinfo='x+y',
-                offsetgroup=item['Feature'],
-                base=[0] if item['Value'] > 0 else [item['Value']]
-            ))
+            if item['Value'] >= 0:
+                # 正值:从current_x开始向右
+                fig_waterfall.add_trace(go.Bar(
+                    y=[item['Feature']],
+                    x=[item['Value']],
+                    orientation='h',
+                    marker_color=color,
+                    text=[f"{item['Value']:.4f}"],
+                    textposition='outside',
+                    textfont=dict(size=9, color='black'),
+                    showlegend=False,
+                    hoverinfo='x+y',
+                    base=[current_x]
+                ))
+                current_x += item['Value']
+            else:
+                # 负值:从current_x开始向左
+                fig_waterfall.add_trace(go.Bar(
+                    y=[item['Feature']],
+                    x=[abs(item['Value'])],
+                    orientation='h',
+                    marker_color=color,
+                    text=[f"{item['Value']:.4f}"],
+                    textposition='outside',
+                    textfont=dict(size=9, color='black'),
+                    showlegend=False,
+                    hoverinfo='x+y',
+                    base=[current_x]
+                ))
+                current_x += item['Value']  # 当前值减小
+
+        # 添加baseline竖线
+        fig_waterfall.add_vline(x=baseline, line_dash='dash', line_color='gray', line_width=1)
+        
+        # 添加baseline标签
+        fig_waterfall.add_annotation(
+            x=baseline,
+            y=0.5,
+            text='E[f(x)]',
+            showarrow=False,
+            font=dict(size=9, color='gray'),
+            yshift=10
+        )
 
         fig_waterfall.update_layout(
             title="SHAP Waterfall Plot",
-            xaxis_title="Prediction",
+            xaxis_title="SHAP Value",
             yaxis_title="",
-            height=350,
-            margin=dict(l=10, r=80, t=40, b=40),
-            font=dict(size=11, color='black'),
+            height=310,
+            margin=dict(l=180, r=50, t=40, b=40),
+            font=dict(size=10, family="'Segoe UI', Arial, sans-serif", color='black'),
+            title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
-            xaxis=dict(linecolor='black', linewidth=1, showgrid=False, range=[-0.1, 0.5]),
-            yaxis=dict(showgrid=False, linecolor='black', linewidth=1, autorange='reversed'),
+            xaxis=dict(
+                linecolor='black',
+                linewidth=1,
+                showgrid=False,
+                zeroline=False,
+                tickfont=dict(size=12, color='black'),
+                titlefont=dict(size=14, weight='bold', color='black')
+            ),
+            yaxis=dict(
+                showgrid=False,
+                linecolor='black',
+                linewidth=1,
+                autorange='reversed',
+                zeroline=False,
+                tickfont=dict(size=10, color='black'),
+                titlefont=dict(size=10, color='black')
+            ),
             hovermode='closest'
         )
 
         st.plotly_chart(fig_waterfall, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
 
-        # Force Plot - 横向瀑布图，与R版本shapviz一致
-        st.markdown('<div style="padding-left: 200px;">', unsafe_allow_html=True)
+        # Force Plot - 按照shapviz的sv_force函数样式
+        st.markdown('<div style="padding-left: 150px;">', unsafe_allow_html=True)
 
-        # 创建子图用于显示feature labels
-        fig_force = make_subplots(
-            rows=1, cols=2,
-            column_widths=[0.75, 0.25],
-            horizontal_spacing=0.02,
-            specs=[[{'type': 'bar'}, {'type': 'bar'}]]
-        )
+        fig_force = go.Figure()
 
-        force_data = [
-            {'Feature': 'Primary tumor site = 1', 'Value': 0.0227},
-            {'Feature': 'PLT = 239', 'Value': 0.0247},
-            {'Feature': 'Number of metastatic organs = 1', 'Value': 0.0754},
-            {'Feature': 'Gender = 1', 'Value': -0.0276},
-            {'Feature': 'AST = 20', 'Value': -0.02},
-            {'Feature': 'Other site metastasis = 0', 'Value': -0.00768}
-        ]
+        # Force plot:所有特征贡献从baseline开始累积,显示最终预测值
+        baseline = 0.276
+        current_x = baseline
 
-        # 计算累积位置
-        cumulative = 0.276
-        
-        # 添加E[f(x)]线
-        fig_force.add_vline(x=0.276, line_dash='dash', line_color='gray', line_width=1)
+        # 添加所有条形,按绝对值降序排列
+        sorted_data = sorted(waterfall_data, key=lambda x: abs(x['Value']), reverse=True)
 
-        # 添加条形 - 按顺序从左到右累积
-        for item in force_data:
+        for item in sorted_data:
             color = '#FFC107' if item['Value'] > 0 else '#9C27B0'
             
-            if item['Value'] > 0:
-                fig_force.add_trace(
-                    go.Bar(
-                        y=[0.5],
-                        x=[item['Value']],
-                        orientation='h',
-                        marker_color=color,
-                        text=[f"{item['Value']:.4f}"],
-                        textposition='inside',
-                        textfont=dict(size=9, color='black'),
-                        showlegend=False,
-                        hoverinfo='text',
-                        hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
-                        base=[cumulative]
-                    ),
-                    row=1, col=1
-                )
-                cumulative += item['Value']
+            if item['Value'] >= 0:
+                fig_force.add_trace(go.Bar(
+                    y=[0],
+                    x=[item['Value']],
+                    orientation='h',
+                    marker_color=color,
+                    text=[f"{item['Value']:.4f}"],
+                    textposition='inside',
+                    textfont=dict(size=9, color='black'),
+                    showlegend=False,
+                    hoverinfo='text',
+                    hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
+                    base=[current_x]
+                ))
+                current_x += item['Value']
             else:
-                # 负值也添加到累积位置
-                fig_force.add_trace(
-                    go.Bar(
-                        y=[0.5],
-                        x=[abs(item['Value'])],
-                        orientation='h',
-                        marker_color=color,
-                        text=[f"{item['Value']:.4f}"],
-                        textposition='inside',
-                        textfont=dict(size=9, color='black'),
-                        showlegend=False,
-                        hoverinfo='text',
-                        hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
-                        base=[cumulative]
-                    ),
-                    row=1, col=1
-                )
-                cumulative += item['Value']
+                fig_force.add_trace(go.Bar(
+                    y=[0],
+                    x=[abs(item['Value'])],
+                    orientation='h',
+                    marker_color=color,
+                    text=[f"{item['Value']:.4f}"],
+                    textposition='inside',
+                    textfont=dict(size=9, color='black'),
+                    showlegend=False,
+                    hoverinfo='text',
+                    hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
+                    base=[current_x]
+                ))
+                current_x += item['Value']
 
-        # 最终预测值标签
-        final_prediction = 0.276 + sum([item['Value'] for item in force_data])
+        # 添加baseline竖线
+        fig_force.add_vline(x=baseline, line_dash='dash', line_color='gray', line_width=1)
+
+        # 添加最终预测值标签
+        final_pred = baseline + sum([item['Value'] for item in sorted_data])
         fig_force.add_annotation(
-            x=final_prediction,
-            y=0.5,
-            text=f"{final_prediction:.4f}",
+            x=final_pred,
+            y=0,
+            text=f"{final_pred:.4f}",
             showarrow=True,
             arrowhead=2,
             arrowsize=1,
@@ -528,31 +594,36 @@ with col_right:
             font=dict(size=11, color='black', weight='bold')
         )
 
-        # E[f(x)]标签
-        fig_force.add_annotation(
-            x=0.276,
-            y=0.9,
-            text='E[f(x)]=0.276',
-            showarrow=False,
-            font=dict(size=9, color='gray'),
-            xanchor='center'
-        )
-
         fig_force.update_layout(
             title="Individual SHAP Force Plot",
             xaxis_title="Prediction Value",
             yaxis_title="",
-            height=200,
-            margin=dict(l=10, r=10, t=40, b=40),
-            font=dict(size=10, color='black'),
+            height=220,
+            margin=dict(l=20, r=30, t=40, b=40),
+            font=dict(size=10, family="'Segoe UI', Arial, sans-serif", color='black'),
+            title_font=dict(size=16, family="'Segoe UI', Arial, sans-serif", color='#2c77b4'),
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
             barmode='stack',
-            xaxis=dict(linecolor='black', linewidth=1, showgrid=False, range=[0.1, 0.5]),
-            yaxis=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=1, range=[0, 1]),
-            xaxis2=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=1),
-            yaxis2=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=1, range=[0, 1]),
+            xaxis=dict(
+                linecolor='black',
+                linewidth=1,
+                showgrid=False,
+                zeroline=False,
+                range=[0.2, 0.4],
+                tickfont=dict(size=12, color='black'),
+                titlefont=dict(size=14, weight='bold', color='black')
+            ),
+            yaxis=dict(
+                showgrid=False,
+                showticklabels=False,
+                linecolor='black',
+                linewidth=0.5,
+                zeroline=False,
+                range=[-0.5, 0.5],
+                titlefont=dict(size=10, color='black')
+            ),
             hovermode='closest'
         )
 
@@ -561,16 +632,14 @@ with col_right:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 结束容器
-st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# 结束右侧容器
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # 页脚
 st.markdown("""
 <footer>
-    <div class="footer-content">
-
-        <p>Copyright &copy; 2026. All rights reserved.</p>
-
-    </div>
+    web address: https://chgdpnk1.shinyapps.io/gdzjnkzxyy_Model/
 </footer>
 """, unsafe_allow_html=True)
