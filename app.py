@@ -8,7 +8,7 @@ from plotly.subplots import make_subplots
 # 页面配置
 st.set_page_config(
     page_title="PM Risk Prediction Model",
-    page_icon="🏥",
+    page_icon="🏥❤",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -375,24 +375,34 @@ with col_right:
         # 个体SHAP分析
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown('<div class="section-title">Individual SHAP Analysis</div>', unsafe_allow_html=True)
-        
-        # 模拟SHAP值（根据截图样式）
+
+        # Waterfall图 - 完全模仿shapviz样式
+        st.markdown('<div style="padding-left: 150px;">', unsafe_allow_html=True)
+
         waterfall_data = [
-            {'Feature': 'Number of metastatic organs = 1', 'Value': 0.0754, 'Type': 'positive'},
-            {'Feature': 'Gender = 1', 'Value': -0.0276, 'Type': 'negative'},
-            {'Feature': 'PLT = 239', 'Value': 0.0247, 'Type': 'positive'},
-            {'Feature': 'Primary tumor site = 1', 'Value': 0.0227, 'Type': 'positive'},
-            {'Feature': 'AST = 20', 'Value': -0.02, 'Type': 'negative'},
-            {'Feature': 'Other site metastasis = 0', 'Value': -0.00768, 'Type': 'negative'}
+            {'Feature': 'Number of metastatic organs = 1', 'Value': 0.0754},
+            {'Feature': 'Gender = 1', 'Value': -0.0276},
+            {'Feature': 'PLT = 239', 'Value': 0.0247},
+            {'Feature': 'Primary tumor site = 1', 'Value': 0.0227},
+            {'Feature': 'AST = 20', 'Value': -0.02},
+            {'Feature': 'Other site metastasis = 0', 'Value': -0.00768}
         ]
-        
-        # Waterfall图 - 模仿shapviz样式
+
         fig_waterfall = go.Figure()
-        
-        # 计算累积值
-        cumulative = 0.276  # E[f(x)]
-        for i, item in enumerate(waterfall_data):
-            color = '#FFC107' if item['Type'] == 'positive' else '#9C27B0'
+
+        # 添加基准线（E[f(x)]）
+        fig_waterfall.add_trace(go.Scatter(
+            x=[0.276, 0.276],
+            y=[waterfall_data[-1]['Feature'], ''],
+            mode='lines',
+            line=dict(color='gray', width=1, dash='dash'),
+            showlegend=False,
+            hoverinfo='none'
+        ))
+
+        # 添加条形
+        for item in waterfall_data:
+            color = '#FFC107' if item['Value'] > 0 else '#9C27B0'
             fig_waterfall.add_trace(go.Bar(
                 y=[item['Feature']],
                 x=[item['Value']],
@@ -401,9 +411,21 @@ with col_right:
                 text=[f"{item['Value']:.4f}"],
                 textposition='outside',
                 textfont=dict(size=9, color='black'),
-                showlegend=False
+                showlegend=False,
+                hoverinfo='x+y'
             ))
-        
+
+        # 添加E[f(x)]标签
+        fig_waterfall.add_trace(go.Scatter(
+            x=[0.276],
+            y=[''],
+            mode='text',
+            text=['E[f(x)]=0.276'],
+            textposition='bottom center',
+            textfont=dict(size=9, color='gray'),
+            showlegend=False
+        ))
+
         fig_waterfall.update_layout(
             title="SHAP Waterfall Plot",
             xaxis_title="SHAP Value",
@@ -414,40 +436,67 @@ with col_right:
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
-            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False, range=[-0.05, 0.1]),
-            yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5, autorange='reversed')
+            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
+            yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5, autorange='reversed'),
+            hovermode='closest'
         )
-        
+
         st.plotly_chart(fig_waterfall, use_container_width=True)
-        
-        # Force Plot - 模仿shapviz样式
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Force Plot - 完全模仿shapviz样式
         st.markdown('<div style="padding-left: 150px;">', unsafe_allow_html=True)
-        
+
         force_data = [
-            {'Feature': 'Primary tumor site', 'Value': 0.0227},
-            {'Feature': 'PLT=239', 'Value': 0.0247},
-            {'Feature': 'Number of metastatic organs=1', 'Value': 0.0754},
-            {'Feature': 'Gender=1', 'Value': -0.0276},
-            {'Feature': 'AST=20', 'Value': -0.02},
-            {'Feature': 'Other site metastasis=0', 'Value': -0.00768}
+            {'Feature': 'Primary tumor site = 1', 'Value': 0.0227},
+            {'Feature': 'PLT = 239', 'Value': 0.0247},
+            {'Feature': 'Number of metastatic organs = 1', 'Value': 0.0754},
+            {'Feature': 'Gender = 1', 'Value': -0.0276},
+            {'Feature': 'AST = 20', 'Value': -0.02},
+            {'Feature': 'Other site metastasis = 0', 'Value': -0.00768}
         ]
-        
+
         fig_force = go.Figure()
-        
-        for item in force_data:
+
+        # 添加E[f(x)]基准线
+        fig_force.add_trace(go.Scatter(
+            x=[0.276, 0.276],
+            y=[-1, 1],
+            mode='lines',
+            line=dict(color='gray', width=1, dash='dash'),
+            showlegend=False,
+            hoverinfo='none'
+        ))
+
+        # 添加E[f(x)]标签
+        fig_force.add_trace(go.Scatter(
+            x=[0.276],
+            y=[1.2],
+            mode='text',
+            text=['E[f(x)]=0.276'],
+            textposition='middle center',
+            textfont=dict(size=9, color='gray'),
+            showlegend=False
+        ))
+
+        # 添加条形
+        for idx, item in enumerate(force_data):
             color = '#FFC107' if item['Value'] > 0 else '#9C27B0'
+            y_pos = idx * 0.8  # 垂直分布
             fig_force.add_trace(go.Bar(
-                y=[''],
+                y=[y_pos],
                 x=[item['Value']],
                 orientation='h',
                 marker_color=color,
-                text=[f"+{item['Value']:.4f}" if item['Value'] > 0 else f"{item['Value']:.4f}"],
+                text=[f"{item['Value']:.4f}"],
                 textposition='inside',
                 textfont=dict(size=9, color='black'),
                 showlegend=False,
-                hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>"
+                hoverinfo='text',
+                hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>",
+                base=0.276 if item['Value'] < 0 else 0
             ))
-        
+
         fig_force.update_layout(
             title="Individual SHAP Force Plot",
             xaxis_title="Prediction Value",
@@ -458,18 +507,15 @@ with col_right:
             plot_bgcolor='white',
             paper_bgcolor='white',
             showlegend=False,
-            barmode='relative',
-            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False, range=[0.2, 0.45]),
-            yaxis=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=0.5)
+            barmode='overlay',
+            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
+            yaxis=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=0.5),
+            hovermode='closest'
         )
-        
-        # 添加E[f(x)]参考线
-        fig_force.add_vline(x=0.276, line_dash="dash", line_color="gray", 
-                           annotation_text="E[f(x)]=0.276", annotation_position="bottom")
-        
+
         st.plotly_chart(fig_force, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
-        
+
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 结束容器
