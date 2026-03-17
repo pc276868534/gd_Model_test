@@ -62,7 +62,45 @@ get_default_value <- function(feature) {
   }
 }
 
-# --- 3. UI 界面布局（不包含全局SHAP分析）---
+# 检查是否有全局SHAP对象，如果没有则尝试创建
+if (!exists("SHAP_sv_ChooseModel")) {
+  tryCatch({
+    # 如果SHAP对象不存在，尝试从数据计算
+    library(shapviz)
+    library(kernelshap)
+    
+    # 创建预测函数
+    pred_fun <- function(object, newdata) {
+      pred <- object$predict_newdata(newdata)
+      if ("prob.1" %in% names(as.data.table(pred))) {
+        return(as.numeric(as.data.table(pred)$prob.1))
+      } else {
+        return(as.numeric(as.data.table(pred)$response))
+      }
+    }
+    
+    # 使用部分数据计算全局SHAP值（减少计算时间）
+    feature_names <- task_model$feature_names
+    bg_data <- train_data[sample(nrow(train_data), min(100, nrow(train_data))), feature_names, drop = FALSE]
+    
+    # 计算kernelshap
+    shap_values <- kernelshap(
+      object = model_ChooseModel_aftertune,
+      X = train_data[sample(nrow(train_data), min(500, nrow(train_data))), feature_names, drop = FALSE],
+      bg_X = bg_data,
+      pred_fun = pred_fun
+    )
+    
+    # 创建shapviz对象
+    SHAP_sv_ChooseModel <- shapviz(shap_values)
+    
+    print("全局SHAP对象已成功计算并创建")
+  }, error = function(e) {
+    print(paste("无法计算全局SHAP对象:", e$message))
+  })
+}
+
+# --- 3. UI 界面布局（包含全局SHAP分析）---
 ui <- fluidPage(
   tags$head(
     tags$style(HTML("
@@ -172,6 +210,22 @@ ui <- fluidPage(
         padding: 5px 10px !important;
         font-size: 13px;
       }
+      
+      /* SHAP图表样式 */
+      .shap-plot-container {
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px;
+        background-color: #f9f9f9;
+      }
+      .shap-title {
+        text-align: center;
+        font-weight: bold;
+        color: #2c77b4;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
     "))
   ),
   
@@ -223,7 +277,18 @@ ui <- fluidPage(
       ),
       
       column(width = 8,
-             # 注意：这里移除了全局SHAP分析部分
+             # 全局SHAP分析卡片
+             div(class = "card",
+                 div(class = "section-title", "Global SHAP Analysis"),
+                 div(class = "shap-plot-container",
+                     div(class = "shap-title", "Global SHAP Importance Plot"),
+                     plotOutput("global_shap_bar", width = "100%", height = "300px")
+                 ),
+                 div(class = "shap-plot-container",
+                     div(class = "shap-title", "Global SHAP Beeswarm Plot"),
+                     plotOutput("global_shap_beeswarm", width = "100%", height = "400px")
+                 )
+             ),
              
              div(class = "card",
                  div(class = "section-title", "Prediction Result"),
@@ -246,13 +311,90 @@ ui <- fluidPage(
       )
     ),
     
-    )
+
+  )
 )
 
-# --- 4. Server 逻辑（不包含全局SHAP分析）---
+# --- 4. Server 逻辑（包含全局SHAP分析）---
 server <- function(input, output) {
   
-  # 注意：这里移除了全局SHAP分析的renderPlot函数
+  # 渲染全局SHAP条形图（重要性图）
+  output$global_shap_bar <- renderPlot({
+    if (exists("SHAP_sv_ChooseModel")) {
+      # 创建自定义主题
+      custom_theme <- theme_minimal() +
+        theme(
+          panel.background = element_rect(fill = "white", color = NA),
+          panel.grid.major = element_line(color = "#e0e0e0", linewidth = 0.5),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(color = "black", linewidth = 0.5),
+          axis.text = element_text(size = 12, color = "black"),
+          axis.title = element_text(size = 14, face = "bold", color = "black"),
+          plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#2c77b4"),
+          legend.position = "none"
+        )
+      
+      # 创建条形图
+      sv_importance(SHAP_sv_ChooseModel) + 
+        custom_theme +
+        labs(
+          title = "Global SHAP Feature Importance",
+          x = "mean(|SHAP value|)",
+          y = "Feature"
+        ) +
+        scale_fill_manual(values = "#FFA726")  # 橙黄色
+    } else {
+      # 如果没有全局SHAP对象，显示提示
+      plot(1, type = "n", xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1),
+           main = "Global SHAP Importance Plot Not Available")
+      text(0.5, 0.5, "Global SHAP model not loaded or could not be calculated", 
+           cex = 1.2, col = "darkred")
+    }
+  })
+  
+  # 渲染全局SHAP蜂群图（散点图）
+  output$global_shap_beeswarm <- renderPlot({
+    if (exists("SHAP_sv_ChooseModel")) {
+      # 创建自定义主题
+      custom_theme <- theme_minimal() +
+        theme(
+          panel.background = element_rect(fill = "#f5f5f5", color = NA),  # 灰色背景
+          panel.grid.major = element_line(color = "#d0d0d0", linewidth = 0.5),
+          panel.grid.minor = element_blank(),
+          axis.line = element_line(color = "black", linewidth = 0.5),
+          axis.text = element_text(size = 12, color = "black"),
+          axis.title = element_text(size = 14, face = "bold", color = "black"),
+          plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#2c77b4"),
+          legend.position = "right",
+          legend.title = element_text(size = 12, face = "bold"),
+          legend.text = element_text(size = 11)
+        )
+      
+      # 创建蜂群图
+      sv_importance(SHAP_sv_ChooseModel, kind = "beeswarm", show_numbers = FALSE) + 
+        custom_theme +
+        labs(
+          title = "Global SHAP Beeswarm Plot",
+          x = "SHAP Value",
+          y = "Feature"
+        ) +
+        scale_color_gradient2(
+          low = "#2166ac",  # 蓝色代表低值
+          mid = "#f7f7f7",  # 白色代表中间值
+          high = "#b2182b", # 红色代表高值
+          midpoint = 0,
+          name = "Feature Value",
+          labels = c("Low", "", "High"),
+          breaks = c(-3, 0, 3)  # 根据您的数据调整
+        )
+    } else {
+      # 如果没有全局SHAP对象，显示提示
+      plot(1, type = "n", xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1),
+           main = "Global SHAP Beeswarm Plot Not Available")
+      text(0.5, 0.5, "Global SHAP model not loaded or could not be calculated", 
+           cex = 1.2, col = "darkred")
+    }
+  })
   
   observeEvent(input$predict, {
     # 准备输入数据
