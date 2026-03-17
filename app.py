@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from plotly.subplots import make_subplots
 
 # 页面配置
 st.set_page_config(
@@ -12,10 +13,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 自定义CSS样式 - 完全按照app.R的样式 + Streamlit主题覆盖
+# 自定义CSS样式
 st.markdown("""
 <style>
-    /* 覆盖Streamlit默认样式 */
     .stApp {
         background-color: #E6F7FF;
     }
@@ -35,10 +35,6 @@ st.markdown("""
         background-color: #235e92;
     }
     
-    .stNumberInput, .stSelectbox {
-        font-size: 13px;
-    }
-    
     .stNumberInput>label, .stSelectbox>label {
         font-size: 13px;
         color: #333;
@@ -46,18 +42,6 @@ st.markdown("""
         font-weight: normal;
     }
     
-    /* 移除Streamlit图表容器边距 */
-    .stPlotlyChart {
-        margin-bottom: 0;
-    }
-    
-    /* 自定义样式 */
-    body {
-        background-color: #E6F7FF;
-        font-family: 'Segoe UI', Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-    }
     .navbar-custom {
         background-color: #2c77b4;
         color: white;
@@ -157,7 +141,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 标题 - 完全按照app.R的样式
+# 标题
 st.markdown("""
 <div class="navbar-custom" style="margin: 10px;">
     <h2 style="margin:0; font-size: 20px;">PM Risk Prediction Model for Colorectal Cancer Patients</h2>
@@ -198,7 +182,6 @@ def predict_risk(input_data):
 # 主容器
 st.markdown('<div style="margin: 10px;">', unsafe_allow_html=True)
 
-# 布局 - 左4右8
 col_left, col_right = st.columns([4, 8])
 
 # 左侧 - 输入特征
@@ -208,7 +191,6 @@ with col_left:
     
     input_data = {}
     
-    # 两列布局
     for i in range(0, len(FEATURES), 2):
         c1, c2 = st.columns(2)
         
@@ -285,6 +267,7 @@ with col_right:
         title_font=dict(size=16, color='#2c77b4'),
         showlegend=False,
         plot_bgcolor='white',
+        paper_bgcolor='white',
         xaxis=dict(linecolor='black', linewidth=0.5, showgrid=True, gridcolor='#e0e0e0', gridwidth=0.5),
         yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
     )
@@ -328,6 +311,7 @@ with col_right:
         font=dict(size=12, color='black'),
         title_font=dict(size=16, color='#2c77b4'),
         plot_bgcolor='#f5f5f5',
+        paper_bgcolor='#f5f5f5',
         xaxis=dict(linecolor='black', linewidth=0.5, showgrid=True, gridcolor='#d0d0d0', gridwidth=0.5),
         yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
     )
@@ -352,7 +336,6 @@ with col_right:
         </div>
         """, unsafe_allow_html=True)
         
-        # 计算位置
         if prob <= 0.3:
             pos = (prob / 0.3) * 30
         elif prob <= 0.5:
@@ -362,7 +345,6 @@ with col_right:
         
         pos = max(0, min(100, pos))
         
-        # 风险等级
         if prob > 0.5:
             risk_color = "#d9534f"
             risk_label = "High Risk"
@@ -394,40 +376,77 @@ with col_right:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown('<div class="section-title">Individual SHAP Analysis</div>', unsafe_allow_html=True)
         
-        # Waterfall图
-        waterfall_values = [-0.05, 0.03, 0.02, 0.08, -0.02, 0.01]
+        # 模拟SHAP值（根据截图样式）
+        waterfall_data = [
+            {'Feature': 'Number of metastatic organs = 1', 'Value': 0.0754, 'Type': 'positive'},
+            {'Feature': 'Gender = 1', 'Value': -0.0276, 'Type': 'negative'},
+            {'Feature': 'PLT = 239', 'Value': 0.0247, 'Type': 'positive'},
+            {'Feature': 'Primary tumor site = 1', 'Value': 0.0227, 'Type': 'positive'},
+            {'Feature': 'AST = 20', 'Value': -0.02, 'Type': 'negative'},
+            {'Feature': 'Other site metastasis = 0', 'Value': -0.00768, 'Type': 'negative'}
+        ]
         
-        fig_waterfall = go.Figure(go.Bar(
-            x=waterfall_values,
-            y=shap_labels,
-            orientation='h',
-            marker_color=['#b2182b' if x > 0 else '#2166ac' for x in waterfall_values]
-        ))
+        # Waterfall图 - 模仿shapviz样式
+        fig_waterfall = go.Figure()
+        
+        # 计算累积值
+        cumulative = 0.276  # E[f(x)]
+        for i, item in enumerate(waterfall_data):
+            color = '#FFC107' if item['Type'] == 'positive' else '#9C27B0'
+            fig_waterfall.add_trace(go.Bar(
+                y=[item['Feature']],
+                x=[item['Value']],
+                orientation='h',
+                marker_color=color,
+                text=[f"{item['Value']:.4f}"],
+                textposition='outside',
+                textfont=dict(size=9, color='black'),
+                showlegend=False
+            ))
         
         fig_waterfall.update_layout(
             title="SHAP Waterfall Plot",
             xaxis_title="SHAP Value",
             yaxis_title="",
             height=310,
-            margin=dict(l=150, r=20, t=40, b=40),
+            margin=dict(l=200, r=80, t=40, b=40),
             font=dict(size=10, color='black'),
             plot_bgcolor='white',
+            paper_bgcolor='white',
             showlegend=False,
-            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
-            yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
+            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False, range=[-0.05, 0.1]),
+            yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5, autorange='reversed')
         )
         
         st.plotly_chart(fig_waterfall, use_container_width=True)
         
-        # Force Plot
+        # Force Plot - 模仿shapviz样式
         st.markdown('<div style="padding-left: 150px;">', unsafe_allow_html=True)
         
-        fig_force = go.Figure(go.Bar(
-            x=[prob],
-            y=[''],
-            orientation='h',
-            marker_color='#2c77b4'
-        ))
+        force_data = [
+            {'Feature': 'Primary tumor site', 'Value': 0.0227},
+            {'Feature': 'PLT=239', 'Value': 0.0247},
+            {'Feature': 'Number of metastatic organs=1', 'Value': 0.0754},
+            {'Feature': 'Gender=1', 'Value': -0.0276},
+            {'Feature': 'AST=20', 'Value': -0.02},
+            {'Feature': 'Other site metastasis=0', 'Value': -0.00768}
+        ]
+        
+        fig_force = go.Figure()
+        
+        for item in force_data:
+            color = '#FFC107' if item['Value'] > 0 else '#9C27B0'
+            fig_force.add_trace(go.Bar(
+                y=[''],
+                x=[item['Value']],
+                orientation='h',
+                marker_color=color,
+                text=[f"+{item['Value']:.4f}" if item['Value'] > 0 else f"{item['Value']:.4f}"],
+                textposition='inside',
+                textfont=dict(size=9, color='black'),
+                showlegend=False,
+                hovertemplate=f"{item['Feature']}<br>{item['Value']:.4f}<extra></extra>"
+            ))
         
         fig_force.update_layout(
             title="Individual SHAP Force Plot",
@@ -437,10 +456,16 @@ with col_right:
             margin=dict(l=0, r=20, t=40, b=40),
             font=dict(size=10, color='black'),
             plot_bgcolor='white',
+            paper_bgcolor='white',
             showlegend=False,
-            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
+            barmode='relative',
+            xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False, range=[0.2, 0.45]),
             yaxis=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=0.5)
         )
+        
+        # 添加E[f(x)]参考线
+        fig_force.add_vline(x=0.276, line_dash="dash", line_color="gray", 
+                           annotation_text="E[f(x)]=0.276", annotation_position="bottom")
         
         st.plotly_chart(fig_force, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
