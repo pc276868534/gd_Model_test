@@ -12,9 +12,46 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 自定义CSS样式 - 完全按照app.R的样式
+# 自定义CSS样式 - 完全按照app.R的样式 + Streamlit主题覆盖
 st.markdown("""
 <style>
+    /* 覆盖Streamlit默认样式 */
+    .stApp {
+        background-color: #E6F7FF;
+    }
+    
+    .stButton>button {
+        width: 100%;
+        height: 40px;
+        font-size: 16px;
+        border-radius: 8px;
+        background-color: #2c77b4;
+        color: white;
+        border: none;
+        font-weight: 600;
+    }
+    
+    .stButton>button:hover {
+        background-color: #235e92;
+    }
+    
+    .stNumberInput, .stSelectbox {
+        font-size: 13px;
+    }
+    
+    .stNumberInput>label, .stSelectbox>label {
+        font-size: 13px;
+        color: #333;
+        margin-bottom: 3px;
+        font-weight: normal;
+    }
+    
+    /* 移除Streamlit图表容器边距 */
+    .stPlotlyChart {
+        margin-bottom: 0;
+    }
+    
+    /* 自定义样式 */
     body {
         background-color: #E6F7FF;
         font-family: 'Segoe UI', Arial, sans-serif;
@@ -248,8 +285,8 @@ with col_right:
         title_font=dict(size=16, color='#2c77b4'),
         showlegend=False,
         plot_bgcolor='white',
-        xaxis=dict(gridcolor='#e0e0e0', linewidth=0.5),
-        yaxis=dict(showgrid=False)
+        xaxis=dict(linecolor='black', linewidth=0.5, showgrid=True, gridcolor='#e0e0e0', gridwidth=0.5),
+        yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
     )
     
     st.plotly_chart(fig_bar, use_container_width=True)
@@ -291,8 +328,8 @@ with col_right:
         font=dict(size=12, color='black'),
         title_font=dict(size=16, color='#2c77b4'),
         plot_bgcolor='#f5f5f5',
-        xaxis=dict(gridcolor='#d0d0d0', linewidth=0.5),
-        yaxis=dict(showgrid=False)
+        xaxis=dict(linecolor='black', linewidth=0.5, showgrid=True, gridcolor='#d0d0d0', gridwidth=0.5),
+        yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
     )
     fig_swarm.update_traces(marker=dict(size=6))
     
@@ -377,7 +414,7 @@ with col_right:
             plot_bgcolor='white',
             showlegend=False,
             xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
-            yaxis=dict(showgrid=False)
+            yaxis=dict(showgrid=False, linecolor='black', linewidth=0.5)
         )
         
         st.plotly_chart(fig_waterfall, use_container_width=True)
@@ -402,7 +439,7 @@ with col_right:
             plot_bgcolor='white',
             showlegend=False,
             xaxis=dict(linecolor='black', linewidth=0.5, showgrid=False),
-            yaxis=dict(showgrid=False, showticklabels=False)
+            yaxis=dict(showgrid=False, showticklabels=False, linecolor='black', linewidth=0.5)
         )
         
         st.plotly_chart(fig_force, use_container_width=True)
