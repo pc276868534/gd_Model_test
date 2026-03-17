@@ -192,10 +192,12 @@ with col_left:
     input_data = {}
     feature_items = list(FEATURES.items())
 
-    for i, (feature_name, feature_info) in enumerate(feature_items):
+    # 逐对处理特征
+    for i in range(0, len(feature_items), 2):
         col_input1, col_input2 = st.columns(2)
 
         # 创建第一个输入控件
+        feature_name, feature_info = feature_items[i]
         with col_input1:
             if feature_info['type'] == 'numeric':
                 input_data[feature_name] = st.number_input(
