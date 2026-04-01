@@ -327,8 +327,8 @@ server <- function(input, output) {
                            panel.border = element_blank(),
                            axis.line.x = element_line(color = "black"),
                            axis.line.y = element_blank(),
-                           axis.text = element_text(size = 10),
-                           axis.title = element_text(size = 10))
+                           axis.text = element_text(size = 12),
+                           axis.title = element_text(size = 12))
       
       output$waterfall <- renderPlot({
         sv_waterfall(sv_obj) + theme_clean + labs(title = "SHAP Waterfall Plot", x = "SHAP Value", y = "")
