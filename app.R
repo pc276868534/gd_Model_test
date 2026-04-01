@@ -11,7 +11,7 @@ try(library(kernelshap))
 display_names_map <- c(
   "AST" = "AST (U/L)",
   "PLT" = "PLT (×10⁹/L)", 
-  "gender" = "Gender",
+  "gender" = "Sex",
   "number.of.metastatic.organs" = "Number of metastatic organs (n)",
   "other.site.metastasis" = "Other site metastasis (n)",
   "primary.tumor.sites" = "Primary tumor site"
