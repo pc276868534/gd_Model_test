@@ -327,7 +327,7 @@ server <- function(input, output) {
                            panel.border = element_blank(),
                            axis.line.x = element_line(color = "black"),
                            axis.line.y = element_blank(),
-                           axis.text = element_text(size = 12),
+                           axis.text = element_text(size = 11 , face = "bold"),
                            axis.title = element_text(size = 12))
       
       output$waterfall <- renderPlot({
