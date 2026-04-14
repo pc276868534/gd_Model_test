@@ -7,9 +7,32 @@ try(library(ggplot2))
 try(library(shapviz))
 try(library(kernelshap))
 
-# =========================================================
-# 0) Load model objects (keep your original logic)
-# =========================================================
+# --- 1. 配置名称映射与清洗函数 ---
+display_names_map <- c(
+  "AST" = "AST (U/L)",
+  "PLT" = "PLT (×10⁹/L)", 
+  "gender" = "Sex",
+  "number.of.metastatic.organs" = "Number of metastatic organs (n)",
+  "other.site.metastasis" = "Other site metastasis (n)",
+  "primary.tumor.sites" = "Primary tumor site"
+)
+
+clean_name <- function(x) {
+  if (x %in% names(display_names_map)) {
+    return(display_names_map[[x]])
+  }
+  return(gsub("\\.", " ", x))
+}
+
+clean_name_for_plot <- function(x) {
+  name <- clean_name(x)
+  return(gsub("\\s*\\(.*?\\)", "", name)) 
+}
+
+gender_choices <- list("Male" = 0, "Female" = 1)
+site_choices <- list("left colon cancer" = 1, "right colon cancer" = 2, "rectal cancer" = 3)
+
+# --- 2. 加载模型逻辑 ---
 try(load("image_ChooseModel.RData"))
 try(graph_pipeline_ChooseModel$param_set$set_values(.values = best_ChooseModel_param_vals))
 try(graph_pipeline_ChooseModel$train(task_train))
@@ -18,435 +41,307 @@ task_model <- model_ChooseModel_aftertune$state$train_task
 variables <- setNames(as.list(task_model$feature_types$type), task_model$feature_types$id)
 train_data <- as.data.frame(task_train$data())
 
-# =========================================================
-# 1) Feature display names (original -> UI display)
-#    original features: age, bmi, gender, glucose, race, sbp
-# =========================================================
-display_names_map <- c(
-  "age" = "Age, year",
-  "bmi" = "BMI, kg/m^2",
-  "gender" = "Gender",
-  "glucose" = "FPG, mmol/L",
-  "race" = "Race",
-  "sbp" = "SBP, mmHg"
-)
-
-clean_name <- function(x) {
-  if (x %in% names(display_names_map)) return(display_names_map[[x]])
-  return(gsub("\\.", " ", x))
-}
-
-# For SHAP plot title cleanup (remove parenthesis in display name if any)
-clean_name_for_plot <- function(x) {
-  name <- clean_name(x)
-  return(gsub("\\s*\\(.*?\\)", "", name))
-}
-
-# =========================================================
-# 2) UI select options with display mapping
-#    but pass original numeric codes to the model
-# =========================================================
-
-# Sex: original 1=Male, 2=Female
-gender_display_choices <- c(
-  "Male" = 1,
-  "Female" = 2
-)
-
-# Race: original 1=Han, 2=Yi, 3=Meng, 4=Dai, 5=TuJia
-race_display_choices <- c(
-  "Han" = 1,
-  "Yi" = 2,
-  "Meng" = 3,
-  "Dai" = 4,
-  "TuJia" = 5
-)
-
-# =========================================================
-# 3) Default values (custom defaults)
-#    (If you want other defaults, modify here)
-# =========================================================
+# 定义自定义默认值
 custom_defaults <- list(
-  "age" = 50,
-  "bmi" = 28,
-  "gender" = 1,   # 1=Male
-  "glucose" = 7.0,
-  "race" = 1,     # 1=Han
-  "sbp" = 120
+  "AST" = 15.1,  # AST默认值设为20
+  "PLT" = 239,  # PLT默认值设为239
+  "gender" = 1,  # 性别默认设为女性 (1)
+  "number.of.metastatic.organs" = 2,  # 转移器官数量默认设为1
+  "other.site.metastasis" = 0,  # 其他部位转移默认设为0
+  "primary.tumor.sites" = 3  # 原发肿瘤部位默认设为左结肠癌
 )
 
+# 计算默认值的函数
 get_default_value <- function(feature) {
   if (feature %in% names(custom_defaults)) {
     return(custom_defaults[[feature]])
-  } else if (feature %in% names(train_data) && is.numeric(train_data[[feature]])) {
+  } else if (variables[[feature]] %in% c("numeric", "integer")) {
     return(median(train_data[[feature]], na.rm = TRUE))
   } else {
-    # fallback
-    if (!is.null(task_model$feature_names) && feature %in% task_model$feature_names) {
-      levs <- task_model$levels(feature)
-      if (!is.null(levs) && length(levs[[1]]) > 0) return(levs[[1]][1])
-    }
-    return(NULL)
+    return(task_model$levels(feature)[[1]][1])
   }
 }
 
-# =========================================================
-# 4) UI layout requirements
-#    - Input split into 3 columns, each 3 inputs
-#    - Remove duplicate prediction parts
-#    - Remove Global SHAP
-#    - Background淡蓝色
-#    - Font bigger
-#    - Prediction panel model name in top-left
-#    - Risk colors: >0.5 red (High), 0.3-0.5 yellow (Medium), <0.3 green (Low)
-# =========================================================
-
-# Determine features order exactly as requested
-feature_order <- c("age", "bmi", "gender", "glucose", "race", "sbp")
-
+# --- 3. UI 界面布局（不包含全局SHAP分析）---
 ui <- fluidPage(
   tags$head(
     tags$style(HTML("
-      body {
-        background-color: #E6F7FF; /*淡蓝色*/
-        font-family: 'Segoe UI', Arial, sans-serif;
+      body { 
+        background-color: #E6F7FF;
+        font-family: 'Segoe UI', Arial, sans-serif; 
         margin: 0;
         padding: 0;
       }
-
-      .navbar-custom {
-        background-color: #2c77b4;
-        color: white;
-        padding: 14px 20px;
-        border-radius: 0 0 12px 12px;
-        margin-bottom: 18px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      .navbar-custom { 
+        background-color: #2c77b4; 
+        color: white; 
+        padding: 12px 20px; 
+        border-radius: 0 0 10px 10px; 
+        margin-bottom: 20px; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
       }
-
-      .card {
-        background: white;
-        padding: 18px;
-        border-radius: 14px;
-        box-shadow: 0 2px 10px rgba(44,119,180,0.25);
-        margin-bottom: 16px;
+      .card { 
+        background: white; 
+        padding: 15px;
+        border-radius: 12px; 
+        box-shadow: 0 2px 8px rgb(44 119 180); 
+        margin-bottom: 15px;
+        text-align: left; 
       }
-
-      .section-title {
-        color: #2c77b4;
-        font-weight: 800;
-        border-left: 4px solid #2c77b4;
-        padding-left: 10px;
-        margin-bottom: 14px;
-        font-size: 18px;
-      }
-
-      .form-control {
-        height: 42px !important;
-        padding: 8px 10px !important;
-        font-size: 15px !important;
-      }
-
-      .form-group label {
-        margin-bottom: 6px !important;
-        font-size: 14px;
-        color: #333;
-        font-weight: 700;
-      }
-
-      .btn-primary {
+      .section-title { 
+        color: #2c77b4; 
+        font-weight: bold; 
+        border-left: 4px solid #2c77b4; 
+        padding-left: 10px; 
+        margin-bottom: 12px;
         font-size: 16px;
-        font-weight: 700;
-        border-radius: 10px;
-        height: 44px !important;
       }
-
-      /* Probability text */
-      .prob-text-style {
-        color: #2c77b4;
-        font-weight: 800;
-        font-size: 22px;
-        margin-bottom: 10px;
-      }
-
-      /* Risk indicator bar (single, with thresholds) */
-      .risk-container {
-        position: relative;
-        width: 100%;
+      
+      .risk-container { 
+        position: relative; 
+        width: 95%;  /* 改为95% */
         height: 16px;
-        border-radius: 10px;
-        margin-top: 10px;
-        overflow: hidden;
-        background: linear-gradient(to right,
-          #5cb85c 0%, #5cb85c 30%,
-          #f0ad4e 30%, #f0ad4e 50%,
-          #d9534f 50%, #d9534f 100%);
+        background: linear-gradient(to right, 
+          #5cb85c 0%, #5cb85c 30%, 
+          #f0ad4e 30%, #f0ad4e 50%, 
+          #d9534f 50%, #d9534f 100%); 
+        border-radius: 8px; 
+        margin: 12px auto 5px auto;  /* 增加auto使其居中 */
       }
-
+      
       .risk-indicator {
         position: absolute;
-        top: -6px;
-        width: 3px;
-        height: 28px;
+        top: -4px;
+        width: 2px;
+        height: 24px;
         background-color: #1a1a1a;
-        border-radius: 2px;
+        border-radius: 1px;
         transform: translateX(-50%);
         transition: left 0.5s ease-out;
       }
 
-      .risk-badge {
-        display: inline-block;
-        padding: 6px 14px;
-        border-radius: 999px;
-        color: white;
-        font-weight: 900;
+      .scale-wrapper { 
+        position: relative; 
+        width: 95%;  /* 改为95% */
+        height: 18px;
+        color: #666; 
+        font-size: 12px;
+        font-weight: 500; 
+        margin-bottom: 12px;
+        margin-left: auto;  /* 增加自动外边距使其居中 */
+        margin-right: auto;  /* 增加自动外边距使其居中 */
+      }
+      .scale-label { 
+        position: absolute; 
+        transform: translateX(-50%); 
+      }
+      
+      .risk-label-badge { 
+        display: inline-block; 
+        padding: 4px 16px;
+        border-radius: 20px; 
+        color: white; 
+        font-weight: bold; 
         font-size: 14px;
-        margin-top: 12px;
+        margin-top: 5px;
       }
-
-      .scale-wrapper {
-        position: relative;
-        width: 100%;
-        margin-top: 8px;
-        margin-bottom: 6px;
-        color: #666;
+      .prob-text-style { 
+        color: #2c77b4; 
+        font-weight: 600; 
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+      footer { 
+        text-align: left; 
+        color: #333; 
+        padding: 15px 0;
         font-size: 12px;
-        font-weight: 700;
+        margin-top: 10px;
       }
-      .scale-label {
-        position: absolute;
-        transform: translateX(-50%);
+      
+      .form-group { 
+        margin-bottom: 6px !important;
       }
-
-      footer {
-        text-align: left;
+      .form-group label { 
+        margin-bottom: 3px !important;
+        font-size: 13px;
         color: #333;
-        padding: 14px 0 8px 0;
-        font-size: 12px;
-        margin-top: 8px;
-        font-weight: 600;
+      }
+      .form-control { 
+        height: 36px !important;
+        padding: 5px 10px !important;
+        font-size: 13px;
       }
     "))
   ),
-
-  # Header
-  div(style = "margin: 10px;",
-      div(class = "navbar-custom",
-          h2("Lung Prediction Model for Diabetic Patients",
-             style = "margin:0; font-size: 20px; font-weight: 900;")
+  
+  # 添加页边距容器
+  div(style = "margin: 10px;",  
+    div(class = "navbar-custom", 
+        h2("PM Risk Prediction Model for Colorectal Cancer Patients", 
+           style = "margin:0; font-size: 20px;")
+    ),
+    
+    fluidRow(
+      column(width = 4,
+             div(class = "card",
+                 div(class = "section-title", "Input Features"),
+                 fluidRow(
+                   lapply(names(variables), function(feature) {
+                     # 获取默认值
+                     default_val <- get_default_value(feature)
+                     
+                     # 创建输入控件
+                     if (feature == "gender") {
+                       input_control <- selectInput(feature, clean_name(feature), 
+                                                   choices = gender_choices,
+                                                   selected = as.character(default_val))
+                     } else if (feature == "primary.tumor.sites") {
+                       input_control <- selectInput(feature, clean_name(feature), 
+                                                   choices = site_choices,
+                                                   selected = as.character(default_val))
+                     } else if (variables[[feature]] %in% c("numeric", "integer")) {
+                       input_control <- numericInput(feature, clean_name(feature), 
+                                                    value = default_val)
+                     } else {
+                       # 其他分类变量
+                       input_control <- selectInput(feature, clean_name(feature), 
+                                                   choices = task_model$levels(feature)[[1]],
+                                                   selected = as.character(default_val))
+                     }
+                     
+                     # 返回列
+                     column(width = 6, input_control)
+                   })
+                 ),
+                 div(style = "margin-top: 5px;",
+                     actionButton("predict", "Predict Now", 
+                                  class = "btn-primary", 
+                                  style = "width:100%; height: 40px; font-size: 16px; border-radius: 8px;")
+                 )
+             )
       ),
-
-      fluidRow(
-        # Left column (inputs)
-        column(width = 4,
-               div(class = "card",
-                   div(class = "section-title", "Input Features"),
-
-                   # Inputs split into 3 columns (each column has 2-1? -> requirement: 3 columns each 3 inputs)
-                   # 6 features total，所以实际无法做到“每列3个输入框”（那会是9个）。
-                   # 我按最合理方式：3列布局，分别放 2个/2个/2个，使整体对齐且满足“分成3列”。
-                   # 如果你必须严格“每列3个”，你需要再提供3个额外特征名。
-                   fluidRow(
-                     column(width = 4,
-                            style = "padding-right:10px;",
-                            div(class="form-group",
-                                label("age", display_names_map["age"], class="control-label"),
-                                numericInput("age", NULL, value = get_default_value("age"))
-                            ),
-                            div(class="form-group",
-                                label("gender", display_names_map["gender"], class="control-label"),
-                                selectInput("gender", NULL,
-                                             choices = gender_display_choices,
-                                             selected = as.character(get_default_value("gender")))
-                            )
-                     ),
-                     column(width = 4,
-                            style = "padding-left:10px; padding-right:10px;",
-                            div(class="form-group",
-                                label("bmi", display_names_map["bmi"], class="control-label"),
-                                numericInput("bmi", NULL, value = get_default_value("bmi"))
-                            ),
-                            div(class="form-group",
-                                label("glucose", display_names_map["glucose"], class="control-label"),
-                                numericInput("glucose", NULL, value = get_default_value("glucose"))
-                            )
-                     ),
-                     column(width = 4,
-                            style = "padding-left:10px;",
-                            div(class="form-group",
-                                label("race", display_names_map["race"], class="control-label"),
-                                selectInput("race", NULL,
-                                             choices = race_display_choices,
-                                             selected = as.character(get_default_value("race")))
-                            ),
-                            div(class="form-group",
-                                label("sbp", display_names_map["sbp"], class="control-label"),
-                                numericInput("sbp", NULL, value = get_default_value("sbp"))
-                            )
-                     )
-                   ),
-
-                   div(style = "margin-top: 14px;",
-                       actionButton("predict", "Predict Now",
-                                    class = "btn-primary",
-                                    style = "width:100%; height: 44px;")
-                   )
-               )
-        ),
-
-        # Right column (results)
-        column(width = 8,
-               div(class = "card",
-                   div(class = "section-title", "Prediction Result"),
-
-                   uiOutput("prob_text"),
-
-                   div(class = "risk-container",
-                       uiOutput("dynamic_indicator")  # a vertical marker
-                   ),
-
-                   # risk badge (red/yellow/green)
-                   uiOutput("risk_badge"),
-
-                   # Optional scale labels (English)
-                   div(class="scale-wrapper",
-                       span(class="scale-label", style="left: 0%; transform: none;", "0 Low Risk"),
-                       span(class="scale-label", style="left: 30%;", "0.3"),
-                       span(class="scale-label", style="left: 50%;", "0.5"),
-                       span(class="scale-label", style="right: 0%; transform: none;", "High Risk 1")
-                   )
-               ),
-
-               div(class = "card",
-                   div(class = "section-title", "Individual SHAP Analysis"),
-                   plotOutput("waterfall", height = "310px"),
-                   div(style = "padding-left: 80px;",
-                       plotOutput("force_plot", height = "220px")
-                   )
-               ),
-
-               # footer at bottom
-               footer("Power by FreeStatistics, Contact email: freestatistics@163.com")
-        )
+      
+      column(width = 8,
+             # 注意：这里移除了全局SHAP分析部分
+             
+             div(class = "card",
+                 div(class = "section-title", "Prediction Result"),
+                 uiOutput("prob_text"),
+                 div(class = "risk-container", uiOutput("dynamic_indicator")),
+                 div(class = "scale-wrapper",
+                     span(class = "scale-label", style = "left: 0%; transform: none;", "0 Low Risk"),
+                     span(class = "scale-label", style = "left: 30%;", "0.3"),
+                     span(class = "scale-label", style = "left: 50%;", "0.5"),
+                     span(class = "scale-label", style = "right: 0%; transform: none;", "High Risk 1")
+                 ),
+                 uiOutput("risk_badge")
+             ),
+             
+             div(class = "card",
+                 div(class = "section-title", "Individual SHAP Analysis"),
+                 plotOutput("waterfall", height = "310px"),
+                 div(style = "padding-left: 150px;", plotOutput("force_plot", height = "220px"))
+             )
       )
-  )
+    ),
+    
+    )
 )
 
-# =========================================================
-# 5) Server logic
-#    - gender/race: UI shows labels, but values sent to model are original codes
-#    - risk threshold & English labels
-# =========================================================
+# --- 4. Server 逻辑（不包含全局SHAP分析）---
 server <- function(input, output) {
-
+  
+  # 注意：这里移除了全局SHAP分析的renderPlot函数
+  
   observeEvent(input$predict, {
-
-    # Build input df with original feature IDs (age,bmi,gender,glucose,race,sbp)
-    input_df <- data.frame(
-      age = as.numeric(input$age),
-      bmi = as.numeric(input$bmi),
-      gender = as.numeric(input$gender),   # 1 Male, 2 Female (original codes preserved)
-      glucose = as.numeric(input$glucose),
-      race = as.numeric(input$race),       # 1..5 original codes preserved
-      sbp = as.numeric(input$sbp)
-    )
-
-    # Ensure factor if needed by model (your original code supported factor conversion)
-    # Here we try to align with task_model feature types.
-    for (f in names(input_df)) {
-      ft <- variables[[f]]
-      if (!is.null(ft) && ft == "factor") {
+    # 准备输入数据
+    input_list <- lapply(names(variables), function(f) {
+      val <- input[[f]]
+      if (variables[[f]] %in% c("numeric", "integer")) {
+        return(as.numeric(val))
+      }
+      return(val)
+    })
+    
+    input_df <- as.data.frame(input_list)
+    colnames(input_df) <- names(variables)
+    
+    # 处理因子变量
+    for (f in names(variables)) {
+      if (variables[[f]] == "factor") {
         input_df[[f]] <- factor(input_df[[f]], levels = task_model$levels(f)[[1]])
       }
     }
-
-    # Predict probability
+    
+    # 进行预测
     pred <- model_ChooseModel_aftertune$predict_newdata(input_df)
     prob <- round(as.numeric(as.data.table(pred)$prob.1), 3)
-
+    
+    # 更新概率文本
     output$prob_text <- renderUI({
-      div(class = "prob-text-style",
-          paste0("The probability that this patient has the disease is ", prob)
-      )
+      div(class = "prob-text-style", paste("The probability that this patient has the disease is", prob))
     })
-
-    # Risk marker position on bar:
-    # map prob -> percent using thresholds:
-    # 0.0~0.3 => 0~30, 0.3~0.5 => 30~50, 0.5~1.0 => 50~100
+    
+    # 更新风险指示器
     output$dynamic_indicator <- renderUI({
-      p <- prob
-      pos <- if (p <= 0.3) {
-        (p / 0.3) * 30
-      } else if (p <= 0.5) {
-        30 + ((p - 0.3) / (0.5 - 0.3)) * 20
+      pos <- if (prob <= 0.3) {
+        (prob / 0.3) * 30
+      } else if (prob <= 0.5) {
+        30 + ((prob - 0.3) / (0.5 - 0.3)) * 20
       } else {
-        50 + ((p - 0.5) / (1 - 0.5)) * 50
+        50 + ((prob - 0.5) / (1 - 0.5)) * 50
       }
-      tags$div(
-        class = "risk-indicator",
-        style = paste0("left:", max(0, min(100, pos)), "%;")
-      )
+      tags$div(class = "risk-indicator", style = paste0("left: ", max(0, min(100, pos)), "%;"))
     })
-
-    # Risk badge colors + labels (English)
+    
+    # 更新风险标签
     output$risk_badge <- renderUI({
-      if (prob > 0.5) {
-        div(class="risk-badge", style = "background-color:#d9534f;", "High Risk ( > 0.5 )")
-      } else if (prob >= 0.3) {
-        div(class="risk-badge", style = "background-color:#f0ad4e; color:#333;", "Medium Risk ( 0.3 - 0.5 )")
+      res <- if(prob > 0.5) {
+        list("#d9534f", "High Risk")
+      } else if(prob >= 0.3) {
+        list("#f0ad4e", "Medium Risk")
       } else {
-        div(class="risk-badge", style = "background-color:#5cb85c;", "Low Risk ( < 0.3 )")
+        list("#5cb85c", "Low Risk")
       }
+      div(span(class = "risk-label-badge", style = paste0("background-color:", res[[1]]), res[[2]]))
     })
-
-    # Individual SHAP (kernelshap)
-    # background samples: we take random rows for bg_X
+    
+    # 计算和绘制个体SHAP图
     try({
       pred_fun <- function(obj, newdata) {
         as.numeric(as.data.table(obj$predict_newdata(newdata))$prob.1)
       }
-
-      # model expects feature names in task_model$feature_names order
-      bg_X <- train_data[sample(nrow(train_data), min(50, nrow(train_data))), task_model$feature_names, drop = FALSE]
-
-      shap_vals <- kernelshap(
-        model_ChooseModel_aftertune,
-        input_df,
-        bg_X = bg_X,
-        task_model$feature_names,
-        drop = FALSE,
-        pred_fun = pred_fun
-      )
-
+      
+      shap_vals <- kernelshap(model_ChooseModel_aftertune, input_df, 
+                              bg_X = train_data[sample(nrow(train_data), 50), task_model$feature_names, drop = FALSE], 
+                              pred_fun = pred_fun)
+      
       colnames(shap_vals$S) <- sapply(colnames(shap_vals$S), clean_name_for_plot)
       colnames(shap_vals$X) <- sapply(colnames(shap_vals$X), clean_name_for_plot)
-
+      
       sv_obj <- shapviz(shap_vals)
-
-      theme_clean <- theme_minimal() +
-        theme(
-          panel.grid = element_blank(),
-          panel.border = element_blank(),
-          axis.line.x = element_line(color = "black"),
-          axis.line.y = element_blank(),
-          axis.text = element_text(size = 11, face = "bold"),
-          axis.title = element_text(size = 12)
-        )
-
+      
+      theme_clean <- theme_minimal() + 
+                     theme(panel.grid = element_blank(), 
+                           panel.border = element_blank(),
+                           axis.line.x = element_line(color = "black"),
+                           axis.line.y = element_blank(),
+                           axis.text = element_text(size = 11 , face = "bold"),
+                           axis.title = element_text(size = 12))
+      
       output$waterfall <- renderPlot({
-        sv_waterfall(sv_obj) + theme_clean +
-          labs(title = "SHAP Waterfall Plot", x = "SHAP Value", y = "")
+        sv_waterfall(sv_obj) + theme_clean + labs(title = "SHAP Waterfall Plot", x = "SHAP Value", y = "")
       })
-
+      
       output$force_plot <- renderPlot({
-        sv_force(sv_obj) + theme_clean +
-          theme(
-            axis.line.x = element_line(color = "black"),
-            axis.line.y = element_blank(),
-            axis.text.y = element_blank()
-          ) +
+        sv_force(sv_obj) + theme_clean + 
+          theme(axis.line.x = element_line(color = "black"),
+                axis.line.y = element_blank(), 
+                axis.text.y = element_blank()) +
           labs(title = "Individual SHAP Force Plot", x = "Prediction Value", y = "")
       })
-    }, silent = TRUE)
+    })
   })
 }
 
