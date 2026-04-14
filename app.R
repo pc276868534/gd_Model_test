@@ -67,7 +67,7 @@ ui <- fluidPage(
   tags$head(
     tags$style(HTML("
       body { 
-        background-color: #E6F7FF;
+        background-color: #FFFFFF;
         font-family: 'Segoe UI', Arial, sans-serif; 
         margin: 0;
         padding: 0;
@@ -178,7 +178,7 @@ ui <- fluidPage(
   # 添加页边距容器
   div(style = "margin: 10px;",  
     div(class = "navbar-custom", 
-        h2("PM Risk Prediction Model for Colorectal Cancer Patients", 
+        h2("Lung Metastasis Prediction Model for Colorectal Cancer Patients", 
            style = "margin:0; font-size: 20px;")
     ),
     
@@ -238,10 +238,18 @@ ui <- fluidPage(
                  uiOutput("risk_badge")
              ),
              
-             div(class = "card",
+           div(class = "card",
                  div(class = "section-title", "Individual SHAP Analysis"),
                  plotOutput("waterfall", height = "310px"),
                  div(style = "padding-left: 150px;", plotOutput("force_plot", height = "220px"))
+             ),
+
+             # 这里新增 footer  // ← 插在 column(width = 8, ...) 之后、margin div 结束前
+             footer(
+               HTML(paste0(
+                 "Power by FreeStatistics",
+                 " , Contact email:", "freestatistics@163.com"
+               ))
              )
       )
     ),
