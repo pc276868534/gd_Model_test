@@ -144,7 +144,7 @@ st.markdown("""
 # 标题
 st.markdown("""
 <div class="navbar-custom" style="margin: 10px;">
-    <h2 style="margin:0; font-size: 20px;">PM Risk Prediction Model for Colorectal Cancer Patients</h2>
+    <h2 style="margin:0; font-size: 20px;">Lung Metastasis Prediction Model for Colorectal Cancer Patients</h2>
 </div>
 """, unsafe_allow_html=True)
 
